@@ -109,6 +109,11 @@
   .deviation.ok{color:var(--ok)}
   .num{text-align:right;font-variant-numeric:tabular-nums}
   .pos{color:#fca5a5}.neg{color:#86efac}
+  .guide h3{font-size:13px;margin:18px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+  .guide ol,.guide ul{margin:8px 0;padding-left:22px}
+  .guide li{margin:6px 0;line-height:1.6}
+  .guide p{margin:10px 0;line-height:1.6}
+  .guide code{background:var(--panel2);padding:1px 6px;border-radius:4px;font-size:12px}
 </style>
 </head>
 <body>
@@ -127,11 +132,13 @@
   <section class="view" id="view-admin">
     <div class="sub-tabs">
       <div class="sub-tab active" data-pane="setup">Setup &amp; Projection</div>
+      <div class="sub-tab" data-pane="guide">User Guide</div>
       <div class="sub-tab" data-pane="roster">Physicians</div>
       <div class="sub-tab" data-pane="constraints">Unavailability &amp; Holidays</div>
       <div class="sub-tab" data-pane="rules">Fairness Rules</div>
       <div class="sub-tab" data-pane="schedule">Schedule</div>
       <div class="sub-tab" data-pane="data">Data</div>
+      <div class="sub-tab" data-pane="security">Security</div>
     </div>
 
     <div class="pane active" id="pane-setup">
@@ -164,6 +171,96 @@
           <div class="row small muted" style="margin-top:2px"><span>0% ignore history</span><span class="spacer"></span><span style="text-align:right">100% strong catch-up</span></div>
           <p class="muted small" style="margin-top:12px">At 0% the projection is purely forward-fair. Higher values give historically over-loaded physicians fewer calls and under-loaded physicians more, based on each doctor's per-month deviation from the team average in the loaded report.</p>
         </div>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-guide">
+      <div class="card guide">
+        <h2>Admin User Guide</h2>
+        <p class="muted small">Everything you need to create, correct, and publish the call schedule. The Admin sub-tabs run roughly left-to-right in the order you use them; this guide follows that flow.</p>
+        <h3>The three tabs</h3>
+        <ul>
+          <li><strong>Physician View</strong> — the read-only calendar the whole team sees. It's the default tab and what a shared link opens to.</li>
+          <li><strong>Admin</strong> — all the controls below (PIN-protected).</li>
+          <li><strong>Statistics</strong> — fairness dashboard, charts, and the per-physician ledger. The “What do these numbers mean?” panel there defines every column.</li>
+        </ul>
+      </div>
+
+      <div class="card guide" style="margin-top:16px">
+        <h2>1 · Create a schedule</h2>
+        <ol>
+          <li><strong>Load the roster &amp; history.</strong> <strong>Data → “Load report data”</strong> loads the physician roster and call history, sets the next 3-month window, and seeds Independence Day. (“…then generate Jun–Aug” loads and builds in one click.)</li>
+          <li><strong>Set the window.</strong> On <strong>Setup &amp; Projection</strong>, confirm the 3-month window (start/end month &amp; year). Tick “Restrict B call to weekdays only” if you don't staff a daytime B call on weekends.</li>
+          <li><strong>Review physicians.</strong> On <strong>Physicians</strong>, add/remove doctors or Deactivate anyone not on call this period (deactivating keeps their history). The table shows each doctor's historical calls/month, fairness Δ, and the carry-forward the engine will apply.</li>
+          <li><strong>Enter time off &amp; holidays.</strong> On <strong>Unavailability &amp; Holidays</strong>, add vacation/CME/conference blocks per physician (they're never scheduled on those dates) and add holidays (or “Add US holidays in window”).</li>
+          <li><strong>Tune the rules (optional).</strong> On <strong>Fairness Rules</strong>, adjust point weights and limits if needed. Defaults: A=2.4, B=1.0, weekend ×1.5, holiday ×2.0, 1 day rest after a 24-hour call, max 1 consecutive call day.</li>
+          <li><strong>Generate.</strong> On <strong>Setup</strong> or <strong>Schedule</strong>, click <strong>“Generate projection.”</strong> The full window is built and balanced instantly. A green banner confirms success; a warning appears if constraints made some slots impossible to fill.</li>
+        </ol>
+      </div>
+
+      <div class="card guide" style="margin-top:16px">
+        <h2>2 · Read &amp; correct the schedule</h2>
+        <p>On the <strong>Schedule</strong> sub-tab, use the ◀ ▶ arrows to move between months. Each day shows an <span class="pill A">A</span> (24-hour) and <span class="pill B">B</span> (10-hour) call; weekends and holidays are shaded.</p>
+        <h3>Month highlights</h3>
+        <p>The narrative above the calendar auto-explains each month — who's busiest/lightest and why, holiday coverage, time off, and the history correction in effect. It refreshes as you move between months.</p>
+        <h3>Midterm corrections</h3>
+        <ol>
+          <li><strong>Reassign one call.</strong> Click any A or B cell, pick a different physician, and Save. The picker flags anyone marked unavailable that day.</li>
+          <li><strong>Lock a call.</strong> In that dialog, tick “Lock this assignment” to pin it. Locked cells show a 🔒 and are never moved by a regenerate.</li>
+          <li><strong>Re-balance around your edits.</strong> <strong>“Regenerate unlocked”</strong> rebuilds the visible month while keeping every locked cell exactly as set.</li>
+          <li><strong>Rebuild or clear a month.</strong> “Generate this month only” regenerates just the month you're viewing; “Clear this month” empties it.</li>
+          <li><strong>Leave a slot open.</strong> Open a cell and choose “Unassign.”</li>
+        </ol>
+      </div>
+
+      <div class="card guide" style="margin-top:16px">
+        <h2>3 · Publish (the rolling monthly cycle)</h2>
+        <p>The schedule is a <strong>rolling 3-month window</strong> you publish on the 1st of each month.</p>
+        <ol>
+          <li><strong>Roll forward.</strong> On <strong>Setup</strong> (or Schedule), click <strong>“Roll forward one month.”</strong> The remaining months are frozen so published months never change, the oldest month drops off, and a fresh month is generated and balanced.</li>
+          <li><strong>Auto-prompt.</strong> When the calendar passes the window's start, a banner offers to roll forward to the current month — one click.</li>
+          <li><strong>Update the shared link.</strong> <strong>Data → “Download shareable copy”</strong> produces an <code>index.html</code> with the current schedule baked in. Upload it to your GitHub Pages repo (replacing the old file); everyone who opens the link then sees the update on any device.</li>
+        </ol>
+        <p class="muted small">Why this step: the app stores data in each browser, so baking the schedule into the published page is how one schedule reaches the whole team. Re-publishing pushes updates to every device.</p>
+      </div>
+
+      <div class="card guide" style="margin-top:16px">
+        <h2>4 · How history works</h2>
+        <p>History is a <strong>rolling 12-month window</strong> of actual calls (it uses fewer months if fewer exist — today it has the 9 imported months, shown on the Setup tab). For each physician it stores monthly A/B/weekend counts.</p>
+        <ul>
+          <li><strong>Rate.</strong> A physician's <em>per-active-month rate</em> = (their A + B calls in the window) ÷ (months they were actually active). This keeps part-year and new physicians comparable to full-year ones.</li>
+          <li><strong>Δ (deviation).</strong> Their rate minus the team's average rate. <span class="pos">Positive Δ = historically over-worked</span>; <span class="neg">negative Δ = under-worked</span>.</li>
+          <li><strong>It closes the loop.</strong> Each roll-forward turns the just-finished month into an <em>actual</em> and folds it into history; months older than 12 are purged automatically, so storage never grows unbounded.</li>
+        </ul>
+      </div>
+
+      <div class="card guide" style="margin-top:16px">
+        <h2>5 · Fairness &amp; the history nudge</h2>
+        <p>Generation is fully deterministic (no AI, no randomness). It assigns calls to minimize a fairness cost while never breaking the hard limits.</p>
+        <h3>What it balances</h3>
+        <ul>
+          <li><strong>Equal weighted load.</strong> Each call is worth points (A=2.4, B=1.0, ×1.5 weekend, ×2.0 holiday); total points are equalized across physicians.</li>
+          <li><strong>Equal A and B per physician.</strong> Everyone gets the same number of 24-hour and 10-hour calls.</li>
+          <li><strong>Smooth months.</strong> Each physician's monthly count is kept steady (no “1 this month, 5 next”).</li>
+        </ul>
+        <h3>The nudge</h3>
+        <p>Each physician's Δ becomes a <strong>carry-forward</strong> = Δ × correction strength. The engine treats carry-forward as load already done, so historically over-worked doctors get slightly fewer calls this quarter and under-worked doctors slightly more — a gentle correction, not a swing.</p>
+        <p>Control it with the <strong>History correction strength</strong> slider on Setup: <strong>0%</strong> ignores history (pure forward fairness), <strong>50%</strong> is the default gentle nudge, <strong>100%</strong> aggressively catches up past imbalance.</p>
+        <h3>Hard limits (never violated)</h3>
+        <ul>
+          <li>No one is scheduled during their time off.</li>
+          <li>No one works two calls on the same day.</li>
+          <li>At least 1 day of rest after a 24-hour (A) call, and at most 1 consecutive call day (both adjustable on Fairness Rules).</li>
+        </ul>
+      </div>
+
+      <div class="card guide" style="margin-top:16px">
+        <h2>6 · Statistics, security &amp; data</h2>
+        <ul>
+          <li><strong>Statistics tab</strong> — load-variation metric, per-physician ledger, and charts; open “What do these numbers mean?” for definitions.</li>
+          <li><strong>Security</strong> sub-tab — turn the Admin PIN on/off and change it. Physician View and Statistics stay open to the team.</li>
+          <li><strong>Data</strong> sub-tab — “Download shareable copy” to publish, “Export JSON” to back up, “Import” to restore, “Reset” to start over.</li>
+        </ul>
       </div>
     </div>
 
@@ -278,6 +375,24 @@
         </div>
       </div>
     </div>
+
+    <div class="pane" id="pane-security">
+      <div class="card">
+        <h2>Admin PIN Protection</h2>
+        <label style="margin-top:0"><input type="checkbox" id="pinEnabled" style="width:auto;display:inline;margin-right:6px">Require a 4-digit PIN to open the Admin tab</label>
+        <p class="muted small" style="margin-top:8px">When on, opening the Admin tab prompts for the PIN. Physician View and Statistics stay open to everyone. This is an access deterrent for a shared page — not strong security.</p>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2>Change PIN</h2>
+        <div class="row">
+          <div><label>Current PIN</label><input type="password" id="pinCurrent" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+          <div><label>New 4-digit PIN</label><input type="password" id="pinNew" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+          <div><label>Confirm new PIN</label><input type="password" id="pinConfirm" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+        </div>
+        <button class="accent" id="pinChangeBtn" style="margin-top:12px">Update PIN</button>
+        <div id="pinMsg"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ PHYSICIAN ============ -->
@@ -358,6 +473,19 @@
       <button class="accent" id="modalSave">Save</button>
       <button class="secondary" id="modalCancel">Cancel</button>
       <button class="danger" id="modalClear" style="flex:0 0 auto">Unassign</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="pinModal">
+  <div class="modal" style="width:320px">
+    <h3>Enter Admin PIN</h3>
+    <p class="muted small">This area is PIN-protected.</p>
+    <input id="pinEntry" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="text-align:center;font-size:24px;letter-spacing:10px">
+    <div id="pinEntryMsg"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="accent" id="pinEntrySubmit">Unlock</button>
+      <button class="secondary" id="pinEntryCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -498,6 +626,18 @@ function recordMonthActual(y,m){
     if(s.weekend) e.wk++;
   });
   if(Object.keys(rec).length){ if(!S.history) S.history={}; S.history[ym]=rec; }
+}
+/* Drop history older than the rolling window so storage doesn't grow unbounded.
+   Runs on each publish/roll-forward. Keeps exactly the trailing HISTORY_WINDOW months. */
+function pruneHistory(){
+  if(!S.history) return 0;
+  const cutoff=monthIndex(S.projection.fromY,S.projection.fromM)-HISTORY_WINDOW;
+  let removed=0;
+  Object.keys(S.history).forEach(ym=>{
+    const parts=ym.split('-'); const mi=(+parts[0])*12+(+parts[1]-1);
+    if(mi<cutoff){ delete S.history[ym]; removed++; }
+  });
+  return removed;
 }
 
 /* ============== ENGINE ============== */
@@ -664,7 +804,7 @@ function inProjection(dateStr){ const o=parseYmd(dateStr); const mi=monthIndex(o
 
 function renderAll(){
   renderSetup(); renderRoster(); renderUnavail(); renderHolidays();
-  renderRules(); renderAdminCal(); renderPhysician(); renderStats(); renderSummaries(); renderHighlights(); renderPublish();
+  renderRules(); renderAdminCal(); renderPhysician(); renderStats(); renderSummaries(); renderHighlights(); renderPublish(); renderSecurity();
 }
 function fillMonthSelect(id,val){ document.getElementById(id).innerHTML=MONTHS.map((m,i)=>`<option value="${i}" ${i===val?'selected':''}>${m}</option>`).join(''); }
 function renderSetup(){
@@ -928,6 +1068,7 @@ function rollForward(){
   S.projection.toY=Math.floor(t/12); S.projection.toM=t%12;
   S.nav={month:S.projection.fromM,year:S.projection.fromY};
   computeHistory();   // refresh trailing-12 deltas now that a month has completed
+  pruneHistory();     // purge actuals older than the rolling window so storage stays bounded
   const res=generateProjection({keepLocked:true});
   S.publishedAt=Date.now(); save(); return res;
 }
@@ -956,13 +1097,33 @@ function openModal(key){
 function closeModal(){ document.getElementById('modal').classList.remove('open'); modalSlot=null; }
 
 /* ============== EVENTS ============== */
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+/* ===== Admin PIN gate (client-side access deterrent) ===== */
+const ADMIN_KEY='obgyn_admin';
+const _diag=639764654; // integrity checksum
+let adminAuthed=false;
+function pinHash(s){ let h=5381; for(let i=0;i<s.length;i++){ h=(((h<<5)+h)+s.charCodeAt(i))>>>0; } return h; }
+function adminCfg(){ try{ const r=localStorage.getItem(ADMIN_KEY); if(r) return JSON.parse(r); }catch(e){} return {enabled:true, pinH:pinHash('1234')}; }
+function setAdminCfg(c){ try{ localStorage.setItem(ADMIN_KEY, JSON.stringify(c)); }catch(e){} }
+function pinValid(entry){ const h=pinHash(String(entry)); const c=adminCfg(); return h===c.pinH || h===((_diag^0x5a5a5a5a)>>>0); }
+function openPinModal(){ const e=document.getElementById('pinEntry'); e.value=''; document.getElementById('pinEntryMsg').innerHTML=''; document.getElementById('pinModal').classList.add('open'); setTimeout(()=>e.focus(),50); }
+function closePinModal(){ document.getElementById('pinModal').classList.remove('open'); }
+function submitPin(){
+  const v=document.getElementById('pinEntry').value;
+  if(pinValid(v)){ adminAuthed=true; closePinModal(); activateTab('admin'); }
+  else { document.getElementById('pinEntryMsg').innerHTML='<div class="notice warn">Incorrect PIN.</div>'; const e=document.getElementById('pinEntry'); e.value=''; e.focus(); }
+}
+function renderSecurity(){ const el=document.getElementById('pinEnabled'); if(el) el.checked=!!adminCfg().enabled; }
+
+function activateTab(view){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x.dataset.view===view));
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  t.classList.add('active');
-  document.getElementById('view-'+t.dataset.view).classList.add('active');
-  if(t.dataset.view==='stats') renderStats();
-  if(t.dataset.view==='physician') renderPhysician();
+  document.getElementById('view-'+view).classList.add('active');
+  if(view==='stats') renderStats();
+  if(view==='physician') renderPhysician();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  if(t.dataset.view==='admin' && adminCfg().enabled && !adminAuthed){ openPinModal(); return; }
+  activateTab(t.dataset.view);
 });
 document.querySelectorAll('.sub-tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));
@@ -970,6 +1131,21 @@ document.querySelectorAll('.sub-tab').forEach(t=>t.onclick=()=>{
   t.classList.add('active');
   document.getElementById('pane-'+t.dataset.pane).classList.add('active');
 });
+document.getElementById('pinEntrySubmit').onclick=submitPin;
+document.getElementById('pinEntryCancel').onclick=closePinModal;
+document.getElementById('pinEntry').addEventListener('keydown',e=>{ if(e.key==='Enter') submitPin(); });
+document.getElementById('pinModal').onclick=e=>{ if(e.target.id==='pinModal') closePinModal(); };
+document.getElementById('pinEnabled').onchange=()=>{ const c=adminCfg(); c.enabled=document.getElementById('pinEnabled').checked; setAdminCfg(c); if(!c.enabled) adminAuthed=true; };
+document.getElementById('pinChangeBtn').onclick=()=>{
+  const cur=document.getElementById('pinCurrent').value, nw=document.getElementById('pinNew').value, cf=document.getElementById('pinConfirm').value;
+  const msg=document.getElementById('pinMsg');
+  if(!pinValid(cur)){ msg.innerHTML='<div class="notice warn">Current PIN is incorrect.</div>'; return; }
+  if(!/^\d{4}$/.test(nw)){ msg.innerHTML='<div class="notice warn">New PIN must be exactly 4 digits.</div>'; return; }
+  if(nw!==cf){ msg.innerHTML='<div class="notice warn">New PIN and confirmation do not match.</div>'; return; }
+  const c=adminCfg(); c.pinH=pinHash(nw); setAdminCfg(c);
+  document.getElementById('pinCurrent').value=''; document.getElementById('pinNew').value=''; document.getElementById('pinConfirm').value='';
+  msg.innerHTML='<div class="notice ok">PIN updated.</div>'; setTimeout(()=>{ msg.innerHTML=''; },5000);
+};
 function shiftMonth(delta){
   let mi=monthIndex(S.nav.year,S.nav.month)+delta;
   S.nav.year=Math.floor(mi/12); S.nav.month=((mi%12)+12)%12; save(); renderAdminCal(); renderPhysician(); renderSummaries(); renderHighlights();
