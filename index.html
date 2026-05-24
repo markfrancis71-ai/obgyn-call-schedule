@@ -265,9 +265,13 @@
           <button class="secondary" id="loadProjectBtn" style="margin-left:8px">…then generate Jun–Aug</button>
         </div>
         <div class="card">
-          <h2>Export / Import / Reset</h2>
-          <button class="accent" id="exportBtn">⬇ Export JSON</button>
-          <button class="secondary" id="printBtn" style="margin-left:8px">🖨 Print</button>
+          <h2>Publish / Export / Reset</h2>
+          <button class="accent" id="shareableBtn">Download shareable copy (schedule baked in)</button>
+          <p class="muted small" style="margin-top:8px">Creates an <code>index.html</code> with the current schedule embedded. Upload it to GitHub Pages and anyone who opens the link sees this schedule immediately, on any device. (Run this from the published URL for best results.)</p>
+          <div style="margin-top:10px">
+            <button class="secondary" id="exportBtn">⬇ Export JSON</button>
+            <button class="secondary" id="printBtn" style="margin-left:8px">🖨 Print</button>
+          </div>
           <label style="margin-top:12px">Import JSON (replaces current data)</label>
           <input type="file" id="importFile" accept="application/json">
           <button class="danger" id="resetBtn" style="margin-top:12px">Reset everything</button>
@@ -371,7 +375,15 @@ const MONABBR=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'
 const PALETTE=['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#a855f7','#f97316','#84cc16','#06b6d4','#eab308','#8b5cf6','#22c55e','#fb7185','#0ea5e9','#d946ef','#65a30d','#f43f5e','#2dd4bf','#fbbf24'];
 const MAXGAIN=10;        // carry = (correction/100)*MAXGAIN*delta
 const AB_GREEDY=1.0;     // greedy: discourage giving a physician the call-type they already have more of
-const AB_LAMBDA=3.0;     // local search: weight on per-physician (A-B)^2
+const AB_LAMBDA=5.0;     // local search: weight on per-physician (A-B)^2 (keep A and B equal)
+const MONTH_LAMBDA=2.5;  // local search: smooth each physician's month-to-month call count
+const HISTORY_WINDOW=12; // rolling history window in months (uses fewer if fewer are available)
+
+/* EMBED_START — published schedule baked in so any device opening the link sees it.
+   Bump EMBEDDED_VERSION and replace EMBEDDED_STATE via the "Download shareable copy" button. */
+const EMBEDDED_VERSION=1;
+const EMBEDDED_STATE={"physicians":[{"id":"p0","name":"Dr. Arya","active":true,"color":"#6366f1","delta":-0.1,"hist":{"A":13,"B":14,"wknd":10,"months":9},"carry":-0.5},{"id":"p1","name":"Dr. Barnard","active":true,"color":"#10b981","delta":0.01,"hist":{"A":14,"B":14,"wknd":8,"months":9},"carry":0.05},{"id":"p2","name":"Dr. Carroll","active":true,"color":"#f59e0b","delta":-0.1,"hist":{"A":15,"B":12,"wknd":6,"months":9},"carry":-0.5},{"id":"p3","name":"Dr. Chavarria","active":true,"color":"#ef4444","delta":0.04,"hist":{"A":14,"B":8,"wknd":9,"months":7},"carry":0.2},{"id":"p4","name":"Dr. Do","active":true,"color":"#3b82f6","delta":0.01,"hist":{"A":12,"B":16,"wknd":8,"months":9},"carry":0.05},{"id":"p5","name":"Dr. Dutta","active":true,"color":"#ec4899","delta":0.23,"hist":{"A":15,"B":15,"wknd":9,"months":9},"carry":1.1500000000000001},{"id":"p6","name":"Dr. Galindo","active":true,"color":"#14b8a6","delta":-0.35,"hist":{"A":8,"B":14,"wknd":8,"months":8},"carry":-1.75},{"id":"p7","name":"Dr. Garza","active":true,"color":"#a855f7","delta":0.12,"hist":{"A":14,"B":15,"wknd":8,"months":9},"carry":0.6},{"id":"p8","name":"Dr. Holloway","active":true,"color":"#f97316","delta":-0.33,"hist":{"A":12,"B":13,"wknd":7,"months":9},"carry":-1.6500000000000001},{"id":"p9","name":"Dr. Landez","active":true,"color":"#84cc16","delta":0.23,"hist":{"A":18,"B":12,"wknd":9,"months":9},"carry":1.1500000000000001},{"id":"p10","name":"Dr. Ramos-Gonzalez","active":true,"color":"#06b6d4","delta":-0.1,"hist":{"A":13,"B":14,"wknd":7,"months":9},"carry":-0.5},{"id":"p11","name":"Dr. Schaefer","active":true,"color":"#eab308","delta":-0.21,"hist":{"A":13,"B":13,"wknd":7,"months":9},"carry":-1.05},{"id":"p12","name":"Dr. Senguttuvan","active":true,"color":"#8b5cf6","delta":0.3,"hist":{"A":8,"B":9,"wknd":5,"months":5},"carry":1.5},{"id":"p13","name":"Dr. Shields","active":true,"color":"#22c55e","delta":0.01,"hist":{"A":13,"B":15,"wknd":8,"months":9},"carry":0.05},{"id":"p14","name":"Dr. Simpson","active":true,"color":"#fb7185","delta":0.01,"hist":{"A":14,"B":14,"wknd":8,"months":9},"carry":0.05},{"id":"p15","name":"Dr. Thompson","active":true,"color":"#0ea5e9","delta":0.1,"hist":{"A":8,"B":8,"wknd":3,"months":5},"carry":0.5},{"id":"p16","name":"Dr. Troy","active":true,"color":"#d946ef","delta":0.12,"hist":{"A":14,"B":15,"wknd":6,"months":9},"carry":0.6},{"id":"p17","name":"Dr. Truong","active":true,"color":"#65a30d","delta":0.01,"hist":{"A":13,"B":15,"wknd":9,"months":9},"carry":0.05},{"id":"p18","name":"Dr. Yaghi","active":true,"color":"#f43f5e","delta":0.23,"hist":{"A":17,"B":13,"wknd":8,"months":9},"carry":1.1500000000000001},{"id":"p19","name":"Dr. Zamora","active":true,"color":"#2dd4bf","delta":0.02,"hist":{"A":12,"B":13,"wknd":7,"months":8},"carry":0.1}],"nav":{"month":5,"year":2026},"projection":{"fromM":5,"fromY":2026,"toM":7,"toY":2026},"correction":50,"publishedAt":1780300800000,"historyLabel":"Sep 2025 – May 2026","historyMonths":9,"bWeekdaysOnly":false,"unavailability":[],"holidays":[{"date":"2026-07-04","name":"Independence Day"}],"rules":{"wA":2.4,"wB":1,"wWeekend":1.5,"wHoliday":2,"restA":1,"maxConsec":1},"assignments":{"2026-06-01|A":{"docId":"p6","locked":false},"2026-06-01|B":{"docId":"p8","locked":false},"2026-06-02|A":{"docId":"p11","locked":false},"2026-06-02|B":{"docId":"p0","locked":false},"2026-06-03|A":{"docId":"p2","locked":false},"2026-06-03|B":{"docId":"p14","locked":false},"2026-06-04|A":{"docId":"p12","locked":false},"2026-06-04|B":{"docId":"p1","locked":false},"2026-06-05|A":{"docId":"p4","locked":false},"2026-06-05|B":{"docId":"p18","locked":false},"2026-06-06|A":{"docId":"p14","locked":false},"2026-06-06|B":{"docId":"p17","locked":false},"2026-06-07|A":{"docId":"p19","locked":false},"2026-06-07|B":{"docId":"p10","locked":false},"2026-06-08|A":{"docId":"p15","locked":false},"2026-06-08|B":{"docId":"p3","locked":false},"2026-06-09|A":{"docId":"p4","locked":false},"2026-06-09|B":{"docId":"p16","locked":false},"2026-06-10|A":{"docId":"p10","locked":false},"2026-06-10|B":{"docId":"p6","locked":false},"2026-06-11|A":{"docId":"p3","locked":false},"2026-06-11|B":{"docId":"p5","locked":false},"2026-06-12|A":{"docId":"p13","locked":false},"2026-06-12|B":{"docId":"p9","locked":false},"2026-06-13|A":{"docId":"p18","locked":false},"2026-06-13|B":{"docId":"p11","locked":false},"2026-06-14|A":{"docId":"p12","locked":false},"2026-06-14|B":{"docId":"p8","locked":false},"2026-06-15|A":{"docId":"p17","locked":false},"2026-06-15|B":{"docId":"p6","locked":false},"2026-06-16|A":{"docId":"p7","locked":false},"2026-06-16|B":{"docId":"p2","locked":false},"2026-06-17|A":{"docId":"p16","locked":false},"2026-06-17|B":{"docId":"p4","locked":false},"2026-06-18|A":{"docId":"p3","locked":false},"2026-06-18|B":{"docId":"p0","locked":false},"2026-06-19|A":{"docId":"p13","locked":false},"2026-06-19|B":{"docId":"p10","locked":false},"2026-06-20|A":{"docId":"p9","locked":false},"2026-06-20|B":{"docId":"p15","locked":false},"2026-06-21|A":{"docId":"p6","locked":false},"2026-06-21|B":{"docId":"p11","locked":false},"2026-06-22|A":{"docId":"p2","locked":false},"2026-06-22|B":{"docId":"p1","locked":false},"2026-06-23|A":{"docId":"p8","locked":false},"2026-06-23|B":{"docId":"p13","locked":false},"2026-06-24|A":{"docId":"p4","locked":false},"2026-06-24|B":{"docId":"p14","locked":false},"2026-06-25|A":{"docId":"p0","locked":false},"2026-06-25|B":{"docId":"p19","locked":false},"2026-06-26|A":{"docId":"p10","locked":false},"2026-06-26|B":{"docId":"p17","locked":false},"2026-06-27|A":{"docId":"p7","locked":false},"2026-06-27|B":{"docId":"p16","locked":false},"2026-06-28|A":{"docId":"p3","locked":false},"2026-06-28|B":{"docId":"p5","locked":false},"2026-06-29|A":{"docId":"p11","locked":false},"2026-06-29|B":{"docId":"p15","locked":false},"2026-06-30|A":{"docId":"p1","locked":false},"2026-06-30|B":{"docId":"p18","locked":false},"2026-07-01|A":{"docId":"p0","locked":false},"2026-07-01|B":{"docId":"p14","locked":false},"2026-07-02|A":{"docId":"p1","locked":false},"2026-07-02|B":{"docId":"p13","locked":false},"2026-07-03|A":{"docId":"p17","locked":false},"2026-07-03|B":{"docId":"p2","locked":false},"2026-07-04|A":{"docId":"p16","locked":false},"2026-07-04|B":{"docId":"p4","locked":false},"2026-07-05|A":{"docId":"p15","locked":false},"2026-07-05|B":{"docId":"p8","locked":false},"2026-07-06|A":{"docId":"p9","locked":false},"2026-07-06|B":{"docId":"p18","locked":false},"2026-07-07|A":{"docId":"p13","locked":false},"2026-07-07|B":{"docId":"p6","locked":false},"2026-07-08|A":{"docId":"p5","locked":false},"2026-07-08|B":{"docId":"p12","locked":false},"2026-07-09|A":{"docId":"p14","locked":false},"2026-07-09|B":{"docId":"p10","locked":false},"2026-07-10|A":{"docId":"p2","locked":false},"2026-07-10|B":{"docId":"p11","locked":false},"2026-07-11|A":{"docId":"p1","locked":false},"2026-07-11|B":{"docId":"p13","locked":false},"2026-07-12|A":{"docId":"p18","locked":false},"2026-07-12|B":{"docId":"p19","locked":false},"2026-07-13|A":{"docId":"p8","locked":false},"2026-07-13|B":{"docId":"p17","locked":false},"2026-07-14|A":{"docId":"p0","locked":false},"2026-07-14|B":{"docId":"p7","locked":false},"2026-07-15|A":{"docId":"p6","locked":false},"2026-07-15|B":{"docId":"p3","locked":false},"2026-07-16|A":{"docId":"p10","locked":false},"2026-07-16|B":{"docId":"p4","locked":false},"2026-07-17|A":{"docId":"p11","locked":false},"2026-07-17|B":{"docId":"p1","locked":false},"2026-07-18|A":{"docId":"p13","locked":false},"2026-07-18|B":{"docId":"p14","locked":false},"2026-07-19|A":{"docId":"p5","locked":false},"2026-07-19|B":{"docId":"p0","locked":false},"2026-07-20|A":{"docId":"p17","locked":false},"2026-07-20|B":{"docId":"p9","locked":false},"2026-07-21|A":{"docId":"p7","locked":false},"2026-07-21|B":{"docId":"p2","locked":false},"2026-07-22|A":{"docId":"p3","locked":false},"2026-07-22|B":{"docId":"p15","locked":false},"2026-07-23|A":{"docId":"p4","locked":false},"2026-07-23|B":{"docId":"p12","locked":false},"2026-07-24|A":{"docId":"p9","locked":false},"2026-07-24|B":{"docId":"p8","locked":false},"2026-07-25|A":{"docId":"p10","locked":false},"2026-07-25|B":{"docId":"p6","locked":false},"2026-07-26|A":{"docId":"p2","locked":false},"2026-07-26|B":{"docId":"p9","locked":false},"2026-07-27|A":{"docId":"p19","locked":false},"2026-07-27|B":{"docId":"p11","locked":false},"2026-07-28|A":{"docId":"p15","locked":false},"2026-07-28|B":{"docId":"p0","locked":false},"2026-07-29|A":{"docId":"p16","locked":false},"2026-07-29|B":{"docId":"p18","locked":false},"2026-07-30|A":{"docId":"p12","locked":false},"2026-07-30|B":{"docId":"p1","locked":false},"2026-07-31|A":{"docId":"p8","locked":false},"2026-07-31|B":{"docId":"p17","locked":false},"2026-08-01|A":{"docId":"p4","locked":false},"2026-08-01|B":{"docId":"p0","locked":false},"2026-08-02|A":{"docId":"p6","locked":false},"2026-08-02|B":{"docId":"p7","locked":false},"2026-08-03|A":{"docId":"p9","locked":false},"2026-08-03|B":{"docId":"p3","locked":false},"2026-08-04|A":{"docId":"p11","locked":false},"2026-08-04|B":{"docId":"p1","locked":false},"2026-08-05|A":{"docId":"p0","locked":false},"2026-08-05|B":{"docId":"p13","locked":false},"2026-08-06|A":{"docId":"p18","locked":false},"2026-08-06|B":{"docId":"p19","locked":false},"2026-08-07|A":{"docId":"p17","locked":false},"2026-08-07|B":{"docId":"p5","locked":false},"2026-08-08|A":{"docId":"p15","locked":false},"2026-08-08|B":{"docId":"p7","locked":false},"2026-08-09|A":{"docId":"p14","locked":false},"2026-08-09|B":{"docId":"p12","locked":false},"2026-08-10|A":{"docId":"p1","locked":false},"2026-08-10|B":{"docId":"p3","locked":false},"2026-08-11|A":{"docId":"p8","locked":false},"2026-08-11|B":{"docId":"p16","locked":false},"2026-08-12|A":{"docId":"p13","locked":false},"2026-08-12|B":{"docId":"p5","locked":false},"2026-08-13|A":{"docId":"p19","locked":false},"2026-08-13|B":{"docId":"p2","locked":false},"2026-08-14|A":{"docId":"p9","locked":false},"2026-08-14|B":{"docId":"p10","locked":false},"2026-08-15|A":{"docId":"p0","locked":false},"2026-08-15|B":{"docId":"p11","locked":false},"2026-08-16|A":{"docId":"p18","locked":false},"2026-08-16|B":{"docId":"p17","locked":false},"2026-08-17|A":{"docId":"p3","locked":false},"2026-08-17|B":{"docId":"p16","locked":false},"2026-08-18|A":{"docId":"p7","locked":false},"2026-08-18|B":{"docId":"p2","locked":false},"2026-08-19|A":{"docId":"p5","locked":false},"2026-08-19|B":{"docId":"p10","locked":false},"2026-08-20|A":{"docId":"p12","locked":false},"2026-08-20|B":{"docId":"p6","locked":false},"2026-08-21|A":{"docId":"p1","locked":false},"2026-08-21|B":{"docId":"p4","locked":false},"2026-08-22|A":{"docId":"p16","locked":false},"2026-08-22|B":{"docId":"p8","locked":false},"2026-08-23|A":{"docId":"p2","locked":false},"2026-08-23|B":{"docId":"p13","locked":false},"2026-08-24|A":{"docId":"p11","locked":false},"2026-08-24|B":{"docId":"p19","locked":false},"2026-08-25|A":{"docId":"p10","locked":false},"2026-08-25|B":{"docId":"p9","locked":false},"2026-08-26|A":{"docId":"p17","locked":false},"2026-08-26|B":{"docId":"p3","locked":false},"2026-08-27|A":{"docId":"p6","locked":false},"2026-08-27|B":{"docId":"p4","locked":false},"2026-08-28|A":{"docId":"p14","locked":false},"2026-08-28|B":{"docId":"p15","locked":false},"2026-08-29|A":{"docId":"p5","locked":false},"2026-08-29|B":{"docId":"p7","locked":false},"2026-08-30|A":{"docId":"p19","locked":false},"2026-08-30|B":{"docId":"p12","locked":false},"2026-08-31|A":{"docId":"p8","locked":false},"2026-08-31|B":{"docId":"p9","locked":false}},"_version":1};
+/* EMBED_END */
 
 function defaultState(){
   const now=new Date();
@@ -386,12 +398,22 @@ function defaultState(){
     unavailability:[],
     holidays:[],
     rules:{wA:2.4,wB:1.0,wWeekend:1.5,wHoliday:2.0,restA:1,maxConsec:1},
-    assignments:{}
+    assignments:{},
+    history:{}
   };
 }
 let S=load();
-function load(){ try{const raw=localStorage.getItem(LS_KEY);if(raw)return Object.assign(defaultState(),JSON.parse(raw));}catch(e){} return defaultState(); }
-function save(){ localStorage.setItem(LS_KEY,JSON.stringify(S)); }
+function load(){
+  let saved=null;
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw) saved=JSON.parse(raw); }catch(e){}
+  // Prefer the embedded published snapshot when this device has no local data,
+  // or when a newer schedule has been published (higher EMBEDDED_VERSION).
+  if(typeof EMBEDDED_STATE!=='undefined' && EMBEDDED_STATE && (!saved || (saved._version||0) < EMBEDDED_VERSION)){
+    const st=Object.assign(defaultState(), EMBEDDED_STATE); st._version=EMBEDDED_VERSION; return st;
+  }
+  return saved ? Object.assign(defaultState(), saved) : defaultState();
+}
+function save(){ if(typeof EMBEDDED_VERSION!=='undefined' && !S._version) S._version=EMBEDDED_VERSION; localStorage.setItem(LS_KEY,JSON.stringify(S)); }
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -406,6 +428,9 @@ function activeDocs(){ return S.physicians.filter(p=>p.active); }
 function slotKey(d,t){ return `${d}|${t}`; }
 function offsetDate(d,n){ const x=parseYmd(d); x.setDate(x.getDate()+n); return ymd(x.getFullYear(),x.getMonth(),x.getDate()); }
 function monthIndex(y,m){ return y*12+m; }
+function monKey(date){ const o=parseYmd(date); return o.getFullYear()*12+o.getMonth(); }
+function ymKey(y,m){ return `${y}-${pad(m+1)}`; }
+function miToYM(mi){ const y=Math.floor(mi/12), m=((mi%12)+12)%12; return ymKey(y,m); }
 
 function slotProps(dateStr,type){
   const o=parseYmd(dateStr);
@@ -434,6 +459,45 @@ function unavailableOn(id,d){ return S.unavailability.some(u=>u.docId===id&&d>=u
 function recomputeCarry(){
   const gain=(S.correction/100)*MAXGAIN;
   S.physicians.forEach(p=>{ p.carry=(p.delta||0)*gain; });
+}
+
+/* Rolling history: each physician's fairness delta is recomputed from the
+   trailing HISTORY_WINDOW months of actuals (the months immediately before the
+   published window start). Uses fewer months if fewer are available. */
+function computeHistory(){
+  if(!S.history) S.history={};
+  const startMI=monthIndex(S.projection.fromY,S.projection.fromM);
+  const win=[]; for(let i=1;i<=HISTORY_WINDOW;i++) win.push(miToYM(startMI-i));
+  const present=win.filter(ym=>S.history[ym]).sort();
+  const rate={};
+  S.physicians.forEach(p=>{
+    let A=0,B=0,wk=0,mons=0;
+    win.forEach(ym=>{ const rec=S.history[ym]&&S.history[ym][p.name]; if(rec){ A+=rec.A||0; B+=rec.B||0; wk+=rec.wk||0; mons++; } });
+    p.hist = mons ? {A,B,wknd:wk,months:mons} : null;
+    rate[p.id] = mons ? (A+B)/mons : null;
+  });
+  const vals=S.physicians.map(p=>rate[p.id]).filter(v=>v!=null);
+  const avg=vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  S.physicians.forEach(p=>{ p.delta = rate[p.id]!=null ? +(rate[p.id]-avg).toFixed(3) : 0; });
+  if(present.length){
+    const f=present[0].split('-'), l=present[present.length-1].split('-');
+    S.historyLabel=`${MONABBR[+f[1]-1]} ${f[0]} – ${MONABBR[+l[1]-1]} ${l[0]}`;
+  } else S.historyLabel=null;
+  S.historyMonths=present.length;
+  recomputeCarry();
+}
+/* When a published month rolls off the front of the window, its generated
+   schedule becomes an actual and is folded into rolling history. */
+function recordMonthActual(y,m){
+  const ym=ymKey(y,m); const rec={};
+  buildSlotsMonth(y,m).forEach(s=>{
+    const a=S.assignments[slotKey(s.date,s.type)]; if(!a) return;
+    const p=docById(a.docId); if(!p) return;
+    const e=rec[p.name]||(rec[p.name]={A:0,B:0,wk:0});
+    if(s.type==='A') e.A++; else e.B++;
+    if(s.weekend) e.wk++;
+  });
+  if(Object.keys(rec).length){ if(!S.history) S.history={}; S.history[ym]=rec; }
 }
 
 /* ============== ENGINE ============== */
@@ -504,10 +568,12 @@ function assignSlots(slots,{keepLocked=false}={}){
 function localSearch(result,slots,docs){
   const slotMap={}; slots.forEach(s=>slotMap[slotKey(s.date,s.type)]=s);
   const inSet=new Set(Object.keys(slotMap));
+  const monthKeys=[...new Set(slots.map(s=>monKey(s.date)))];
+  const nMon=monthKeys.length||1;
   const r=S.rules;
   function stats(){
-    const o={}; docs.forEach(p=>o[p.id]={pts:(p.carry||0),A:0,B:0});
-    for(const k in result){ if(!inSet.has(k))continue; const a=result[k]; if(!a)continue; const s=slotMap[k]; o[a.docId].pts+=slotPoints(s); o[a.docId][s.type]++; }
+    const o={}; docs.forEach(p=>{ o[p.id]={pts:(p.carry||0),A:0,B:0,mc:{}}; monthKeys.forEach(mk=>o[p.id].mc[mk]=0); });
+    for(const k in result){ if(!inSet.has(k))continue; const a=result[k]; if(!a)continue; const s=slotMap[k]; o[a.docId].pts+=slotPoints(s); o[a.docId][s.type]++; o[a.docId].mc[monKey(s.date)]++; }
     return o;
   }
   function docDates(id){ const set={}; for(const k in result){ const a=result[k]; if(a&&a.docId===id) set[k.split('|')[0]]=true; } return set; }
@@ -522,8 +588,13 @@ function localSearch(result,slots,docs){
     if(run>r.maxConsec) return false;
     return true;
   }
-  const cost=(c,mean)=>(c.pts-mean)**2 + AB_LAMBDA*(c.A-c.B)**2;
-  for(let iter=0;iter<8000;iter++){
+  const cost=(c,mean)=>{
+    let tot=0; for(let i=0;i<monthKeys.length;i++) tot+=c.mc[monthKeys[i]]||0;
+    const mcMean=tot/nMon; let mv=0;
+    for(let i=0;i<monthKeys.length;i++){ const v=c.mc[monthKeys[i]]||0; mv+=(v-mcMean)**2; }
+    return (c.pts-mean)**2 + AB_LAMBDA*(c.A-c.B)**2 + MONTH_LAMBDA*mv;
+  };
+  for(let iter=0;iter<12000;iter++){
     const o=stats();
     const vals=docs.map(p=>o[p.id].pts);
     const mean=vals.reduce((x,y)=>x+y,0)/vals.length;
@@ -531,7 +602,7 @@ function localSearch(result,slots,docs){
     for(const k in result){
       if(!inSet.has(k)) continue;
       const a=result[k]; if(!a||a.locked) continue;
-      const s=slotMap[k]; const T=s.type; const pts=slotPoints(s);
+      const s=slotMap[k]; const T=s.type; const pts=slotPoints(s); const mk=monKey(s.date);
       const hiId=a.docId; const hc=o[hiId];
       let bestLo=null,bestGain=1e-9;
       for(const p of docs){
@@ -540,15 +611,15 @@ function localSearch(result,slots,docs){
         if(unavailableOn(p.id,s.date)) continue;
         if(!feasible(s,docDates(p.id),docADates(p.id))) continue;
         const before=cost(hc,mean)+cost(lc,mean);
-        const hc2={pts:hc.pts-pts,A:hc.A-(T==='A'?1:0),B:hc.B-(T==='B'?1:0)};
-        const lc2={pts:lc.pts+pts,A:lc.A+(T==='A'?1:0),B:lc.B+(T==='B'?1:0)};
+        const hc2={pts:hc.pts-pts,A:hc.A-(T==='A'?1:0),B:hc.B-(T==='B'?1:0),mc:Object.assign({},hc.mc)}; hc2.mc[mk]--;
+        const lc2={pts:lc.pts+pts,A:lc.A+(T==='A'?1:0),B:lc.B+(T==='B'?1:0),mc:Object.assign({},lc.mc)}; lc2.mc[mk]++;
         const after=cost(hc2,mean)+cost(lc2,mean);
         const gain=before-after;
         if(gain>bestGain){ bestGain=gain; bestLo=p.id; }
       }
       if(bestLo){
         const lc=o[bestLo];
-        hc.pts-=pts; hc[T]--; lc.pts+=pts; lc[T]++;
+        hc.pts-=pts; hc[T]--; hc.mc[mk]--; lc.pts+=pts; lc[T]++; lc.mc[mk]++;
         result[k]={docId:bestLo,locked:false}; improved=true;
       }
     }
@@ -850,10 +921,13 @@ function renderPublish(){
 function rollForward(){
   const cur=buildSlotsRange(S.projection.fromY,S.projection.fromM,S.projection.toY,S.projection.toM);
   cur.forEach(s=>{ const k=slotKey(s.date,s.type); if(S.assignments[k]) S.assignments[k].locked=true; });
+  // the month leaving the published window becomes an actual -> fold into rolling history
+  recordMonthActual(S.projection.fromY,S.projection.fromM);
   const f=monthIndex(S.projection.fromY,S.projection.fromM)+1, t=monthIndex(S.projection.toY,S.projection.toM)+1;
   S.projection.fromY=Math.floor(f/12); S.projection.fromM=f%12;
   S.projection.toY=Math.floor(t/12); S.projection.toM=t%12;
   S.nav={month:S.projection.fromM,year:S.projection.fromY};
+  computeHistory();   // refresh trailing-12 deltas now that a month has completed
   const res=generateProjection({keepLocked:true});
   S.publishedAt=Date.now(); save(); return res;
 }
@@ -978,6 +1052,19 @@ document.getElementById('exportBtn').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`obgyn-schedule-${S.projection.fromY}-${pad(S.projection.fromM+1)}.json`; a.click();
 };
+async function downloadShareable(){
+  const re=/\/\* EMBED_START[\s\S]*?\/\* EMBED_END \*\//;
+  let html=null;
+  try{ const r=await fetch(location.href,{cache:'no-store'}); html=await r.text(); }catch(e){}
+  if(!html || !re.test(html)){ try{ html='<!DOCTYPE html>\n'+document.documentElement.outerHTML; }catch(e){} }
+  if(!html || !re.test(html)){ alert('Could not read the page source to bake in the schedule. Open the app from its published URL (https://…github.io/…) and try again.'); return; }
+  const ver=(typeof EMBEDDED_VERSION!=='undefined'?EMBEDDED_VERSION:0)+1;
+  const block='/* EMBED_START — published schedule baked in.\n   Bump EMBEDDED_VERSION and replace EMBEDDED_STATE via the "Download shareable copy" button. */\nconst EMBEDDED_VERSION='+ver+';\nconst EMBEDDED_STATE='+JSON.stringify(S)+';\n/* EMBED_END */';
+  html=html.replace(re, block);
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='index.html'; a.click();
+}
+document.getElementById('shareableBtn').onclick=downloadShareable;
 document.getElementById('importFile').onchange=e=>{
   const f=e.target.files[0]; if(!f)return;
   const rd=new FileReader();
@@ -990,32 +1077,26 @@ document.getElementById('loadReportBtn').onclick=()=>{ if(confirm('Load report h
 document.getElementById('loadProjectBtn').onclick=()=>{ if(confirm('Load report and generate the Jun–Aug projection?')){ loadReport(); const res=generateProjection({keepLocked:false}); S.publishedAt=Date.now(); save(); renderAll(); showNotice(res,'genNotice'); }};
 
 /* ============== REPORT DATA (Sep 2025 – May 2026) ============== */
+/* The original uploaded report (Sep 2025 – May 2026) as monthly actuals,
+   keyed by month then physician. "Load report data" seeds rolling history from this. */
+const REPORT_HISTORY={"2025-09":{"Dr. Arya":{"A":1,"B":2,"wk":1},"Dr. Barnard":{"A":2,"B":1,"wk":1},"Dr. Carroll":{"A":2,"B":1,"wk":0},"Dr. Do":{"A":2,"B":2,"wk":1},"Dr. Dutta":{"A":2,"B":2,"wk":1},"Dr. Galindo":{"A":1,"B":2,"wk":1},"Dr. Garza":{"A":2,"B":2,"wk":1},"Dr. Holloway":{"A":1,"B":2,"wk":1},"Dr. Landez":{"A":2,"B":2,"wk":1},"Dr. Ramos-Gonzalez":{"A":1,"B":2,"wk":1},"Dr. Schaefer":{"A":1,"B":2,"wk":1},"Dr. Shields":{"A":2,"B":2,"wk":1},"Dr. Simpson":{"A":2,"B":1,"wk":1},"Dr. Troy":{"A":2,"B":1,"wk":0},"Dr. Truong":{"A":1,"B":2,"wk":1},"Dr. Yaghi":{"A":2,"B":2,"wk":1}},"2025-10":{"Dr. Arya":{"A":2,"B":1,"wk":0},"Dr. Barnard":{"A":1,"B":2,"wk":1},"Dr. Carroll":{"A":1,"B":2,"wk":1},"Dr. Do":{"A":2,"B":1,"wk":1},"Dr. Dutta":{"A":2,"B":2,"wk":1},"Dr. Galindo":{"A":1,"B":2,"wk":1},"Dr. Garza":{"A":2,"B":1,"wk":0},"Dr. Holloway":{"A":2,"B":1,"wk":1},"Dr. Landez":{"A":2,"B":2,"wk":1},"Dr. Ramos-Gonzalez":{"A":2,"B":1,"wk":0},"Dr. Schaefer":{"A":2,"B":1,"wk":1},"Dr. Shields":{"A":1,"B":2,"wk":1},"Dr. Simpson":{"A":2,"B":2,"wk":1},"Dr. Troy":{"A":1,"B":2,"wk":0},"Dr. Truong":{"A":2,"B":2,"wk":1},"Dr. Yaghi":{"A":2,"B":2,"wk":1},"Dr. Zamora":{"A":2,"B":1,"wk":2}},"2025-11":{"Dr. Arya":{"A":1,"B":1,"wk":2},"Dr. Barnard":{"A":2,"B":1,"wk":0},"Dr. Carroll":{"A":2,"B":1,"wk":0},"Dr. Chavarria":{"A":2,"B":2,"wk":3},"Dr. Do":{"A":1,"B":2,"wk":0},"Dr. Dutta":{"A":2,"B":1,"wk":2},"Dr. Galindo":{"A":2,"B":1,"wk":0},"Dr. Garza":{"A":1,"B":2,"wk":1},"Dr. Holloway":{"A":1,"B":1,"wk":1},"Dr. Landez":{"A":2,"B":2,"wk":2},"Dr. Ramos-Gonzalez":{"A":1,"B":2,"wk":1},"Dr. Schaefer":{"A":1,"B":1,"wk":1},"Dr. Shields":{"A":1,"B":2,"wk":2},"Dr. Simpson":{"A":1,"B":1,"wk":0},"Dr. Troy":{"A":2,"B":1,"wk":1},"Dr. Truong":{"A":1,"B":2,"wk":1},"Dr. Yaghi":{"A":2,"B":2,"wk":1},"Dr. Zamora":{"A":2,"B":2,"wk":1}},"2025-12":{"Dr. Arya":{"A":2,"B":2,"wk":1},"Dr. Barnard":{"A":1,"B":2,"wk":1},"Dr. Carroll":{"A":2,"B":1,"wk":1},"Dr. Chavarria":{"A":2,"B":1,"wk":0},"Dr. Do":{"A":1,"B":2,"wk":1},"Dr. Dutta":{"A":1,"B":2,"wk":1},"Dr. Galindo":{"A":1,"B":2,"wk":1},"Dr. Garza":{"A":2,"B":2,"wk":2},"Dr. Holloway":{"A":2,"B":1,"wk":1},"Dr. Landez":{"A":2,"B":1,"wk":1},"Dr. Ramos-Gonzalez":{"A":2,"B":1,"wk":0},"Dr. Schaefer":{"A":2,"B":1,"wk":0},"Dr. Shields":{"A":2,"B":1,"wk":1},"Dr. Simpson":{"A":1,"B":2,"wk":1},"Dr. Troy":{"A":1,"B":2,"wk":0},"Dr. Truong":{"A":2,"B":1,"wk":2},"Dr. Yaghi":{"A":2,"B":1,"wk":0},"Dr. Zamora":{"A":1,"B":2,"wk":1}},"2026-01":{"Dr. Arya":{"A":1,"B":2,"wk":1},"Dr. Barnard":{"A":2,"B":1,"wk":1},"Dr. Carroll":{"A":1,"B":2,"wk":1},"Dr. Chavarria":{"A":2,"B":1,"wk":0},"Dr. Do":{"A":1,"B":2,"wk":1},"Dr. Dutta":{"A":2,"B":1,"wk":0},"Dr. Galindo":{"A":1,"B":2,"wk":1},"Dr. Garza":{"A":1,"B":2,"wk":0},"Dr. Holloway":{"A":1,"B":2,"wk":0},"Dr. Landez":{"A":2,"B":1,"wk":2},"Dr. Ramos-Gonzalez":{"A":1,"B":2,"wk":1},"Dr. Schaefer":{"A":1,"B":2,"wk":2},"Dr. Senguttuvan":{"A":2,"B":2,"wk":2},"Dr. Shields":{"A":1,"B":2,"wk":0},"Dr. Simpson":{"A":2,"B":2,"wk":1},"Dr. Thompson":{"A":2,"B":1,"wk":1},"Dr. Troy":{"A":2,"B":1,"wk":1},"Dr. Truong":{"A":1,"B":2,"wk":1},"Dr. Yaghi":{"A":2,"B":1,"wk":1},"Dr. Zamora":{"A":2,"B":1,"wk":1}},"2026-02":{"Dr. Arya":{"A":1,"B":1,"wk":1},"Dr. Barnard":{"A":1,"B":2,"wk":1},"Dr. Carroll":{"A":2,"B":1,"wk":1},"Dr. Chavarria":{"A":2,"B":1,"wk":1},"Dr. Do":{"A":1,"B":2,"wk":1},"Dr. Dutta":{"A":1,"B":2,"wk":2},"Dr. Galindo":{"A":1,"B":1,"wk":1},"Dr. Garza":{"A":2,"B":1,"wk":1},"Dr. Holloway":{"A":1,"B":1,"wk":1},"Dr. Landez":{"A":2,"B":1,"wk":0},"Dr. Ramos-Gonzalez":{"A":2,"B":1,"wk":1},"Dr. Schaefer":{"A":2,"B":1,"wk":0},"Dr. Senguttuvan":{"A":1,"B":2,"wk":1},"Dr. Shields":{"A":1,"B":2,"wk":1},"Dr. Simpson":{"A":1,"B":1,"wk":1},"Dr. Thompson":{"A":1,"B":2,"wk":0},"Dr. Troy":{"A":1,"B":2,"wk":1},"Dr. Truong":{"A":2,"B":1,"wk":1},"Dr. Yaghi":{"A":1,"B":2,"wk":0},"Dr. Zamora":{"A":1,"B":2,"wk":0}},"2026-03":{"Dr. Arya":{"A":1,"B":2,"wk":1},"Dr. Barnard":{"A":2,"B":1,"wk":1},"Dr. Carroll":{"A":2,"B":1,"wk":0},"Dr. Chavarria":{"A":2,"B":1,"wk":2},"Dr. Do":{"A":1,"B":2,"wk":1},"Dr. Dutta":{"A":2,"B":1,"wk":1},"Dr. Galindo":{"A":1,"B":2,"wk":2},"Dr. Garza":{"A":1,"B":2,"wk":1},"Dr. Holloway":{"A":1,"B":2,"wk":0},"Dr. Landez":{"A":2,"B":1,"wk":1},"Dr. Ramos-Gonzalez":{"A":1,"B":2,"wk":1},"Dr. Schaefer":{"A":1,"B":2,"wk":1},"Dr. Senguttuvan":{"A":2,"B":1,"wk":1},"Dr. Shields":{"A":2,"B":1,"wk":1},"Dr. Simpson":{"A":2,"B":2,"wk":1},"Dr. Thompson":{"A":2,"B":2,"wk":1},"Dr. Troy":{"A":2,"B":2,"wk":1},"Dr. Truong":{"A":1,"B":2,"wk":0},"Dr. Yaghi":{"A":2,"B":1,"wk":1},"Dr. Zamora":{"A":1,"B":1,"wk":0}},"2026-04":{"Dr. Arya":{"A":2,"B":1,"wk":1},"Dr. Barnard":{"A":1,"B":2,"wk":1},"Dr. Carroll":{"A":2,"B":1,"wk":1},"Dr. Chavarria":{"A":2,"B":1,"wk":1},"Dr. Do":{"A":1,"B":2,"wk":2},"Dr. Dutta":{"A":1,"B":2,"wk":1},"Dr. Galindo":{"A":0,"B":2,"wk":1},"Dr. Garza":{"A":2,"B":1,"wk":1},"Dr. Holloway":{"A":2,"B":1,"wk":1},"Dr. Landez":{"A":2,"B":1,"wk":0},"Dr. Ramos-Gonzalez":{"A":2,"B":1,"wk":0},"Dr. Schaefer":{"A":2,"B":1,"wk":0},"Dr. Senguttuvan":{"A":1,"B":2,"wk":0},"Dr. Shields":{"A":1,"B":2,"wk":0},"Dr. Simpson":{"A":1,"B":2,"wk":1},"Dr. Thompson":{"A":1,"B":2,"wk":1},"Dr. Troy":{"A":1,"B":2,"wk":1},"Dr. Truong":{"A":2,"B":1,"wk":1},"Dr. Yaghi":{"A":2,"B":1,"wk":1},"Dr. Zamora":{"A":2,"B":2,"wk":1}},"2026-05":{"Dr. Arya":{"A":2,"B":2,"wk":2},"Dr. Barnard":{"A":2,"B":2,"wk":1},"Dr. Carroll":{"A":1,"B":2,"wk":1},"Dr. Chavarria":{"A":2,"B":1,"wk":2},"Dr. Do":{"A":2,"B":1,"wk":0},"Dr. Dutta":{"A":2,"B":2,"wk":0},"Dr. Garza":{"A":1,"B":2,"wk":1},"Dr. Holloway":{"A":1,"B":2,"wk":1},"Dr. Landez":{"A":2,"B":1,"wk":1},"Dr. Ramos-Gonzalez":{"A":1,"B":2,"wk":2},"Dr. Schaefer":{"A":1,"B":2,"wk":1},"Dr. Senguttuvan":{"A":2,"B":2,"wk":1},"Dr. Shields":{"A":2,"B":1,"wk":1},"Dr. Simpson":{"A":2,"B":1,"wk":1},"Dr. Thompson":{"A":2,"B":1,"wk":0},"Dr. Troy":{"A":2,"B":2,"wk":1},"Dr. Truong":{"A":1,"B":2,"wk":1},"Dr. Yaghi":{"A":2,"B":1,"wk":2},"Dr. Zamora":{"A":1,"B":2,"wk":1}}};
 function loadReport(){
   S=defaultState();
-  S.historyLabel="Sep 2025 – May 2026"; S.historyMonths=9;
   S.correction=50;
   S.projection={fromM:5,fromY:2026,toM:7,toY:2026};   // Jun–Aug 2026
   S.nav={month:5,year:2026};
   S.holidays=[{date:'2026-07-04',name:'Independence Day'}];
-  // [name, A, B, Wknd, monthsActive, deltaPerMo].  Thompson is a single physician
-  // (report's consolidated Jan–May record). 20 physicians total.
-  const roster=[
-    ['Arya',13,14,10,9,-0.10],['Barnard',14,14,8,9,0.01],['Carroll',15,12,6,9,-0.10],
-    ['Chavarria',14,8,9,7,0.04],['Do',12,16,8,9,0.01],['Dutta',15,15,9,9,0.23],
-    ['Galindo',8,14,8,8,-0.35],['Garza',14,15,8,9,0.12],['Holloway',12,13,7,9,-0.33],
-    ['Landez',18,12,9,9,0.23],['Ramos-Gonzalez',13,14,7,9,-0.10],['Schaefer',13,13,7,9,-0.21],
-    ['Senguttuvan',8,9,5,5,0.30],['Shields',13,15,8,9,0.01],['Simpson',14,14,8,9,0.01],
-    ['Thompson',8,8,3,5,0.10],['Troy',14,15,6,9,0.12],['Truong',13,15,9,9,0.01],
-    ['Yaghi',17,13,8,9,0.23],['Zamora',12,13,7,8,0.02]
-  ];
-  S.physicians=roster.map((r,i)=>({
-    id:uid(),name:'Dr. '+r[0],active:true,color:PALETTE[i%PALETTE.length],
-    delta:r[5], hist:{A:r[1],B:r[2],wknd:r[3],months:r[4]}, carry:0
-  }));
-  recomputeCarry();
+  S.history=JSON.parse(JSON.stringify(REPORT_HISTORY));
+  const names=["Arya","Barnard","Carroll","Chavarria","Do","Dutta","Galindo","Garza","Holloway","Landez","Ramos-Gonzalez","Schaefer","Senguttuvan","Shields","Simpson","Thompson","Troy","Truong","Yaghi","Zamora"];
+  S.physicians=names.map((n,i)=>({ id:uid(), name:'Dr. '+n, active:true, color:PALETTE[i%PALETTE.length], delta:0, hist:null, carry:0 }));
+  computeHistory();   // derive each physician's delta + hist from the trailing window
   save();
 }
 
+// Seed rolling history for the published baseline if it arrived without monthly records.
+if(S.physicians && S.physicians.length && (!S.history || !Object.keys(S.history).length) && typeof REPORT_HISTORY!=='undefined'){
+  S.history=JSON.parse(JSON.stringify(REPORT_HISTORY));
+}
 applyTheme(currentTheme());
 renderAll();
 </script>
