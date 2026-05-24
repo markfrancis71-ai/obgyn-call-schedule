@@ -115,8 +115,8 @@
 <header>
   <h1>Methodist Stone Oak OB-GYN Call Schedule <span class="dot">●</span></h1>
   <div class="tabs">
-    <div class="tab active" data-view="admin">Admin</div>
-    <div class="tab" data-view="physician">Physician View</div>
+    <div class="tab" data-view="admin">Admin</div>
+    <div class="tab active" data-view="physician">Physician View</div>
     <div class="tab" data-view="stats">Statistics</div>
   </div>
   <button class="nav" id="themeToggle" title="Toggle light / dark mode" style="margin-left:10px;font-size:12px;font-weight:600">Light mode</button>
@@ -124,7 +124,7 @@
 
 <main>
   <!-- ============ ADMIN ============ -->
-  <section class="view active" id="view-admin">
+  <section class="view" id="view-admin">
     <div class="sub-tabs">
       <div class="sub-tab active" data-pane="setup">Setup &amp; Projection</div>
       <div class="sub-tab" data-pane="roster">Physicians</div>
@@ -277,16 +277,12 @@
   </section>
 
   <!-- ============ PHYSICIAN ============ -->
-  <section class="view" id="view-physician">
+  <section class="view active" id="view-physician">
     <div class="toolbar">
       <div style="flex:0 0 260px"><label style="margin:0 0 4px">Highlight my calls</label>
         <select id="physFilter"></select></div>
       <div class="spacer"></div>
       <span class="muted small" id="physSummary"></span>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <h2>Month highlights <span class="hint" id="physHighlightsMonth"></span></h2>
-      <div id="physHighlightsBody" class="small" style="line-height:1.65"></div>
     </div>
     <div class="card">
       <div class="legend">
@@ -296,6 +292,10 @@
       </div>
       <div class="calhead"><button class="nav" id="phPrev">◀</button><div class="lbl" id="physCalLabel"></div><button class="nav" id="phNext">▶</button></div>
       <div class="cal" id="physCal"></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Month highlights <span class="hint" id="physHighlightsMonth"></span></h2>
+      <div id="physHighlightsBody" class="small" style="line-height:1.65"></div>
     </div>
     <div class="card" id="myCallsCard" style="margin-top:16px;display:none">
       <h2>My calls in the projection window</h2>
