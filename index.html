@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Methodist Stone Oak OB-GYN Call Schedule</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171e2e; --panel2:#1e2740; --line:#2a3550;
+    --ink:#e8edf7; --muted:#94a3c0; --accent:#f5b301; --accent2:#3b82f6;
+    --a:#6366f1; --b:#10b981; --warn:#ef4444; --ok:#22c55e;
+    --radius:10px; --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  body.light{
+    --bg:#eef1f7; --panel:#ffffff; --panel2:#f4f6fb; --line:#d9dfea;
+    --ink:#1b2233; --muted:#5c6678; --shadow:0 6px 20px rgba(20,40,80,.12);
+  }
+  body.light header{background:linear-gradient(90deg,#ffffff,#eaf0fb)}
+  body.light .day.weekend{background:#e9eef7}
+  body.light .day.holiday{background:#fdf3df;border-color:#e7c97a}
+  body.light .day .holname{color:#9a6b00}
+  body.light .assign{background:rgba(20,40,80,.04)}
+  body.light .assign:hover{background:rgba(20,40,80,.09)}
+  body.light .tab.active{color:#1a1300}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  header{background:linear-gradient(90deg,#11182a,#1a2440);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:50}
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.3px}
+  header h1 .dot{color:var(--accent)}
+  .tabs{display:flex;gap:6px;margin-left:auto}
+  .tab{padding:8px 16px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600;border:1px solid transparent;user-select:none}
+  .tab:hover{color:var(--ink);background:var(--panel2)}
+  .tab.active{background:var(--accent);color:#1a1300;border-color:var(--accent)}
+  main{padding:22px;max-width:1320px;margin:0 auto}
+  .view{display:none}
+  .view.active{display:block}
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  .cols-4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:980px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h2{margin:0 0 14px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .card h2 .hint{font-size:11px;font-weight:500;color:var(--muted);margin-left:auto}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:600}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:8px 10px;border-radius:7px;font-size:13px;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2)}
+  input[type=range]{padding:0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row>*{flex:1;min-width:120px}
+  button{background:var(--accent2);color:#fff;border:none;padding:9px 16px;border-radius:7px;font-weight:600;cursor:pointer;font-size:13px}
+  button:hover{filter:brightness(1.1)}
+  button.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+  button.accent{background:var(--accent);color:#1a1300}
+  button.danger{background:transparent;color:var(--warn);border:1px solid var(--warn);padding:4px 10px}
+  button.sm{padding:5px 10px;font-size:12px}
+  button.nav{background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:6px 12px;font-size:16px;line-height:1}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  tr:hover td{background:var(--panel2)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+  .pill.A{background:rgba(99,102,241,.18);color:#a5b4fc}
+  .pill.B{background:rgba(16,185,129,.18);color:#6ee7b7}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);padding:4px 10px;border-radius:20px;font-size:12px;margin:3px 4px 0 0}
+  .chip .x{cursor:pointer;color:var(--muted);font-weight:700}
+  .chip .x:hover{color:var(--warn)}
+  .swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .muted{color:var(--muted)}
+  .stat{font-size:26px;font-weight:800}
+  .stat-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar .spacer{flex:1}
+  .calhead{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+  .calhead .lbl{font-weight:700;font-size:15px;min-width:170px;text-align:center}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal .dow{text-align:center;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;padding:4px 0}
+  .day{background:var(--panel2);border:1px solid var(--line);border-radius:8px;min-height:92px;padding:6px;position:relative;font-size:12px}
+  .day.empty{background:transparent;border:none}
+  .day.weekend{background:#1b2236}
+  .day.holiday{background:#2a1f10;border-color:#6b4e12}
+  .day .dnum{font-weight:700;color:var(--muted);font-size:12px}
+  .day .holname{font-size:9px;color:var(--accent);font-weight:700;text-transform:uppercase}
+  .assign{display:flex;align-items:center;gap:5px;margin-top:4px;padding:3px 5px;border-radius:5px;cursor:pointer;background:rgba(255,255,255,.03)}
+  .assign:hover{background:rgba(255,255,255,.08)}
+  .assign .tag{font-size:9px;font-weight:800;width:13px;text-align:center;border-radius:3px}
+  .assign .tag.A{background:var(--a);color:#fff}
+  .assign .tag.B{background:var(--b);color:#06291d}
+  .assign.locked::after{content:'🔒';font-size:9px;margin-left:auto;opacity:.7}
+  .assign .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:12px}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px;width:420px;max-width:92vw;box-shadow:var(--shadow)}
+  .modal h3{margin:0 0 14px}
+  .notice{padding:10px 12px;border-radius:8px;font-size:13px;margin:10px 0}
+  .notice.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#86efac}
+  .notice.warn{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);color:#fca5a5}
+  .notice.info{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
+  .sub-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .sub-tab{padding:6px 13px;border-radius:7px;cursor:pointer;background:var(--panel2);border:1px solid var(--line);font-weight:600;font-size:12px;color:var(--muted)}
+  .sub-tab.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .pane{display:none}
+  .pane.active{display:block}
+  .small{font-size:11px}
+  canvas{max-height:300px}
+  .deviation.high{color:var(--warn)}
+  .deviation.ok{color:var(--ok)}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pos{color:#fca5a5}.neg{color:#86efac}
+</style>
+</head>
+<body>
+<header>
+  <h1>Methodist Stone Oak OB-GYN Call Schedule <span class="dot">●</span></h1>
+  <div class="tabs">
+    <div class="tab active" data-view="admin">Admin</div>
+    <div class="tab" data-view="physician">Physician View</div>
+    <div class="tab" data-view="stats">Statistics</div>
+  </div>
+  <button class="nav" id="themeToggle" title="Toggle light / dark mode" style="margin-left:10px;font-size:12px;font-weight:600">Light mode</button>
+</header>
+
+<main>
+  <!-- ============ ADMIN ============ -->
+  <section class="view active" id="view-admin">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-pane="setup">Setup &amp; Projection</div>
+      <div class="sub-tab" data-pane="roster">Physicians</div>
+      <div class="sub-tab" data-pane="constraints">Unavailability &amp; Holidays</div>
+      <div class="sub-tab" data-pane="rules">Fairness Rules</div>
+      <div class="sub-tab" data-pane="schedule">Schedule</div>
+      <div class="sub-tab" data-pane="data">Data</div>
+    </div>
+
+    <div class="pane active" id="pane-setup">
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>Published Schedule <span class="hint">rolling 3-month window</span></h2>
+          <div id="publishBanner"></div>
+          <div id="publishStatus" class="notice info" style="margin-top:0"></div>
+          <div class="row">
+            <div><label>Window start month</label><select id="projFromMonth"></select></div>
+            <div><label>Start year</label><input type="number" id="projFromYear" min="2024" max="2035"></div>
+          </div>
+          <div class="row">
+            <div><label>Window end month</label><select id="projToMonth"></select></div>
+            <div><label>End year</label><input type="number" id="projToYear" min="2024" max="2035"></div>
+          </div>
+          <label style="margin-top:12px"><input type="checkbox" id="bWeekdaysOnly" style="width:auto;display:inline;margin-right:6px">Restrict B call (10h) to weekdays only</label>
+          <div class="row" style="margin-top:14px">
+            <button class="accent" id="genProjBtn" style="flex:0 0 auto">⚡ Generate / re-publish window</button>
+            <button class="secondary" id="rollBtn" style="flex:0 0 auto">Roll forward one month ▶</button>
+          </div>
+          <p class="muted small" style="margin-top:10px">Publishing rolls forward on the 1st of each month: already-scheduled months are frozen, the oldest month drops off, and a new month is generated. The Statistics tab reflects the current published window.</p>
+          <div id="projNotice"></div>
+        </div>
+        <div class="card">
+          <h2>History &amp; Fairness Correction <span class="hint">how much past load shapes the projection</span></h2>
+          <div id="histStatus" class="notice info" style="margin-top:0">No history loaded yet. Use “Load report data” on the Data tab.</div>
+          <label style="margin-top:6px">History correction strength: <span id="corrLabel" style="color:var(--ink)">50% — gentle nudge</span></label>
+          <input type="range" id="corrRange" min="0" max="100" step="5" value="50">
+          <div class="row small muted" style="margin-top:2px"><span>0% ignore history</span><span class="spacer"></span><span style="text-align:right">100% strong catch-up</span></div>
+          <p class="muted small" style="margin-top:12px">At 0% the projection is purely forward-fair. Higher values give historically over-loaded physicians fewer calls and under-loaded physicians more, based on each doctor's per-month deviation from the team average in the loaded report.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-roster">
+      <div class="card">
+        <h2>Physician Roster <span class="hint">Deactivate to exclude from generation without deleting history</span></h2>
+        <div class="row">
+          <div style="flex:3"><label>Name</label><input id="newDocName" placeholder="e.g. Dr. Patel"></div>
+          <div style="flex:0 0 auto"><label>&nbsp;</label><button class="accent" id="addDocBtn">Add physician</button></div>
+        </div>
+        <table style="margin-top:14px">
+          <thead><tr><th>Physician</th><th>Status</th><th class="num">Hist. calls/mo</th><th class="num">Δ vs avg</th><th class="num">Carry-fwd</th><th style="width:150px"></th></tr></thead>
+          <tbody id="rosterBody"></tbody>
+        </table>
+        <p class="muted small" style="margin-top:8px">Hist. calls/mo &amp; Δ come from the loaded report. Carry-forward is derived from Δ &times; correction strength and is what nudges the projection toward fairness.</p>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-constraints">
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>Vacation / Unavailability</h2>
+          <label>Physician</label><select id="unavailDoc"></select>
+          <div class="row">
+            <div><label>From</label><input type="date" id="unavailFrom"></div>
+            <div><label>To</label><input type="date" id="unavailTo"></div>
+          </div>
+          <label>Reason</label><input id="unavailReason" placeholder="Vacation, conference, CME…">
+          <button class="accent" id="addUnavailBtn" style="margin-top:12px">Add block</button>
+          <div id="unavailList" style="margin-top:14px"></div>
+        </div>
+        <div class="card">
+          <h2>Holidays</h2>
+          <div class="row">
+            <div style="flex:2"><label>Date</label><input type="date" id="holDate"></div>
+            <div style="flex:3"><label>Name</label><input id="holName" placeholder="e.g. Independence Day"></div>
+          </div>
+          <button class="accent" id="addHolBtn" style="margin-top:12px">Add holiday</button>
+          <button class="secondary sm" id="seedHolBtn" style="margin-top:12px;margin-left:8px">Add US holidays in window</button>
+          <div id="holList" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-rules">
+      <div class="card">
+        <h2>Fairness Rules &amp; Weights <span class="hint">Tune how the engine balances load</span></h2>
+        <div class="grid cols-3">
+          <div>
+            <label>A call (24h) base points</label><input type="number" step="0.1" id="wA">
+            <label>B call (10h) base points</label><input type="number" step="0.1" id="wB">
+          </div>
+          <div>
+            <label>Weekend multiplier</label><input type="number" step="0.1" id="wWeekend">
+            <label>Holiday multiplier</label><input type="number" step="0.1" id="wHoliday">
+          </div>
+          <div>
+            <label>Min rest after A call (days off)</label><input type="number" id="restA">
+            <label>Max consecutive call days</label><input type="number" id="maxConsec">
+          </div>
+        </div>
+        <p class="muted small" style="margin-top:12px">The engine balances three things at once: (1) total weighted points are equalized across physicians (plus each one's carry-forward), (2) <strong>each physician gets an equal number of A and B calls</strong>, and (3) weekend &amp; holiday calls are spread evenly. Hard constraints (unavailability, min rest, max consecutive) are never violated. Weighted points = base &times; day multiplier.</p>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-schedule">
+      <div class="toolbar">
+        <button class="accent" id="genProjBtn2">⚡ Generate projection</button>
+        <button class="secondary" id="genMonthBtn">Generate this month only</button>
+        <button class="secondary" id="regenUnlockedBtn">Regenerate unlocked</button>
+        <button class="secondary" id="clearMonthBtn">Clear this month</button>
+        <div class="spacer"></div>
+        <span class="muted small" id="schedSummary"></span>
+      </div>
+      <div id="genNotice"></div>
+      <div class="card" style="margin-bottom:16px">
+        <h2>Month highlights <span class="hint" id="highlightsMonth"></span></h2>
+        <div id="highlightsBody" class="small" style="line-height:1.65"></div>
+      </div>
+      <div class="card">
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--a)"></span> A call (24h)</span>
+          <span><span class="swatch" style="background:var(--b)"></span> B call (10h)</span>
+          <span><span class="swatch" style="background:#1b2236"></span> Weekend</span>
+          <span><span class="swatch" style="background:#2a1f10"></span> Holiday</span>
+          <span class="muted">🔒 = locked. Click any assignment to reassign or lock.</span>
+        </div>
+        <div class="calhead"><button class="nav" id="admPrev">◀</button><div class="lbl" id="adminCalLabel"></div><button class="nav" id="admNext">▶</button></div>
+        <div class="cal" id="adminCal"></div>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-data">
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>Load report history</h2>
+          <p class="muted small">Loads the 20-physician roster and Sep 2025–May 2026 call history from your uploaded report, sets the projection window to Jun–Aug 2026, and seeds Independence Day.</p>
+          <button class="accent" id="loadReportBtn">📊 Load report data</button>
+          <button class="secondary" id="loadProjectBtn" style="margin-left:8px">…then generate Jun–Aug</button>
+        </div>
+        <div class="card">
+          <h2>Export / Import / Reset</h2>
+          <button class="accent" id="exportBtn">⬇ Export JSON</button>
+          <button class="secondary" id="printBtn" style="margin-left:8px">🖨 Print</button>
+          <label style="margin-top:12px">Import JSON (replaces current data)</label>
+          <input type="file" id="importFile" accept="application/json">
+          <button class="danger" id="resetBtn" style="margin-top:12px">Reset everything</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PHYSICIAN ============ -->
+  <section class="view" id="view-physician">
+    <div class="toolbar">
+      <div style="flex:0 0 260px"><label style="margin:0 0 4px">Highlight my calls</label>
+        <select id="physFilter"></select></div>
+      <div class="spacer"></div>
+      <span class="muted small" id="physSummary"></span>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Month highlights <span class="hint" id="physHighlightsMonth"></span></h2>
+      <div id="physHighlightsBody" class="small" style="line-height:1.65"></div>
+    </div>
+    <div class="card">
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--a)"></span> A call (24h)</span>
+        <span><span class="swatch" style="background:var(--b)"></span> B call (10h)</span>
+        <span class="muted">Read-only. Share this page link with the team.</span>
+      </div>
+      <div class="calhead"><button class="nav" id="phPrev">◀</button><div class="lbl" id="physCalLabel"></div><button class="nav" id="phNext">▶</button></div>
+      <div class="cal" id="physCal"></div>
+    </div>
+    <div class="card" id="myCallsCard" style="margin-top:16px;display:none">
+      <h2>My calls in the projection window</h2>
+      <div id="myCallsList"></div>
+    </div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section class="view" id="view-stats">
+    <div id="statsKpis" class="grid cols-4" style="margin-bottom:16px"></div>
+    <details class="card" style="margin-bottom:16px">
+      <summary style="cursor:pointer;font-weight:700;font-size:14px">What do these numbers mean?</summary>
+      <div class="small muted" style="margin-top:12px;line-height:1.85">
+        <strong>Hist calls/mo</strong> — average A+B calls per active month over the loaded history (Sep&nbsp;2025–May&nbsp;2026).<br>
+        <strong>Hist Δ</strong> — that rate minus the team average; <span class="pos">+ = historically over-worked</span>, <span class="neg">− = under-worked</span>.<br>
+        <strong>Proj A / Proj B</strong> — projected 24-hour (A) and 10-hour (B) calls in the projection window.<br>
+        <strong>A−B</strong> — gap between a physician's A and B counts; the engine drives this to 0 (equal A and B).<br>
+        <strong>Proj Wknd / Proj Hol</strong> — projected weekend and holiday calls.<br>
+        <strong>Proj load</strong> — weighted points: A=2.4, B=1.0, &times;1.5 on weekends, &times;2.0 on holidays (all tunable under Fairness Rules), plus the physician's carry-forward.<br>
+        <strong>Dev vs fair</strong> — % above/below an equal share of total weighted load; near 0% is fair, values beyond ±15% are flagged.<br>
+        <strong>Load variation (CV)</strong> — how tightly weighted load is clustered across physicians; lower is fairer (under 8% is tight).
+      </div>
+    </details>
+    <div class="grid cols-2">
+      <div class="card"><h2>Projected weighted load (Jun–Aug)</h2><canvas id="chartLoad"></canvas></div>
+      <div class="card"><h2>Projected A vs B calls</h2><canvas id="chartAB"></canvas></div>
+    </div>
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card"><h2>History correction: past Δ vs projected calls</h2><canvas id="chartCorr"></canvas></div>
+      <div class="card"><h2>Weekend &amp; holiday calls (projected)</h2><canvas id="chartWknd"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Fairness ledger <span class="hint">History (Sep–May) + projected window</span></h2>
+      <table>
+        <thead><tr>
+          <th>Physician</th>
+          <th class="num" title="Average A+B calls per active month over Sep 2025–May 2026">Hist calls/mo</th><th class="num" title="Historical per-month rate minus the team average. Positive = over-worked, negative = under-worked">Hist Δ</th>
+          <th class="num" title="Projected 24-hour (A) calls in the window">Proj A</th><th class="num" title="Projected 10-hour (B) calls in the window">Proj B</th><th class="num" title="A minus B. The engine drives this to 0 — equal A and B per physician">A−B</th><th class="num" title="Projected weekend calls">Proj Wknd</th><th class="num" title="Projected holiday calls">Proj Hol</th>
+          <th class="num" title="Weighted points: A=2.4, B=1.0, ×1.5 weekend, ×2.0 holiday, plus carry-forward">Proj load</th><th class="num" title="Percent above/below an equal share of total weighted load; near 0% is fair">Dev vs fair</th>
+        </tr></thead>
+        <tbody id="ledgerBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">Reassign call</h3>
+    <p class="muted small" id="modalSub"></p>
+    <label>Assign to</label>
+    <select id="modalDoc"></select>
+    <div id="modalWarn"></div>
+    <label style="margin-top:12px"><input type="checkbox" id="modalLock" style="width:auto;display:inline;margin-right:6px">Lock this assignment (keep on regenerate)</label>
+    <div class="row" style="margin-top:16px">
+      <button class="accent" id="modalSave">Save</button>
+      <button class="secondary" id="modalCancel">Cancel</button>
+      <button class="danger" id="modalClear" style="flex:0 0 auto">Unassign</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   OB-GYN Call Scheduler — multi-month, history-aware MVP
+   Engine: greedy + constraint-aware local search.
+   Objective: equalize weighted load (incl. carry-forward) AND give each
+   physician an equal number of A and B calls; spread weekends/holidays.
+   ========================================================================= */
+const LS_KEY='obgyn_scheduler_v2';
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONABBR=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PALETTE=['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#a855f7','#f97316','#84cc16','#06b6d4','#eab308','#8b5cf6','#22c55e','#fb7185','#0ea5e9','#d946ef','#65a30d','#f43f5e','#2dd4bf','#fbbf24'];
+const MAXGAIN=10;        // carry = (correction/100)*MAXGAIN*delta
+const AB_GREEDY=1.0;     // greedy: discourage giving a physician the call-type they already have more of
+const AB_LAMBDA=3.0;     // local search: weight on per-physician (A-B)^2
+
+function defaultState(){
+  const now=new Date();
+  return {
+    physicians:[],
+    nav:{month:now.getMonth(),year:now.getFullYear()},
+    projection:{fromM:now.getMonth(),fromY:now.getFullYear(),toM:now.getMonth(),toY:now.getFullYear()},
+    correction:50,
+    publishedAt:null,
+    historyLabel:null, historyMonths:0,
+    bWeekdaysOnly:false,
+    unavailability:[],
+    holidays:[],
+    rules:{wA:2.4,wB:1.0,wWeekend:1.5,wHoliday:2.0,restA:1,maxConsec:1},
+    assignments:{}
+  };
+}
+let S=load();
+function load(){ try{const raw=localStorage.getItem(LS_KEY);if(raw)return Object.assign(defaultState(),JSON.parse(raw));}catch(e){} return defaultState(); }
+function save(){ localStorage.setItem(LS_KEY,JSON.stringify(S)); }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function ymd(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+function parseYmd(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function isWeekend(o){ const w=o.getDay(); return w===0||w===6; }
+function isHoliday(d){ return S.holidays.some(h=>h.date===d); }
+function holidayName(d){ const h=S.holidays.find(h=>h.date===d); return h?h.name:''; }
+function docById(id){ return S.physicians.find(p=>p.id===id); }
+function activeDocs(){ return S.physicians.filter(p=>p.active); }
+function slotKey(d,t){ return `${d}|${t}`; }
+function offsetDate(d,n){ const x=parseYmd(d); x.setDate(x.getDate()+n); return ymd(x.getFullYear(),x.getMonth(),x.getDate()); }
+function monthIndex(y,m){ return y*12+m; }
+
+function slotProps(dateStr,type){
+  const o=parseYmd(dateStr);
+  return {date:dateStr,type,weekend:isWeekend(o),holiday:isHoliday(dateStr)};
+}
+function buildSlotsMonth(y,m){
+  const dim=daysInMonth(y,m); const slots=[];
+  for(let d=1;d<=dim;d++){
+    const ds=ymd(y,m,d); const o=parseYmd(ds); const we=isWeekend(o);
+    slots.push(slotProps(ds,'A'));
+    if(!(S.bWeekdaysOnly&&we)) slots.push(slotProps(ds,'B'));
+  }
+  return slots;
+}
+function buildSlotsRange(fy,fm,ty,tm){
+  const slots=[]; let y=fy,m=fm;
+  while(monthIndex(y,m)<=monthIndex(ty,tm)){
+    buildSlotsMonth(y,m).forEach(s=>slots.push(s));
+    m++; if(m>11){m=0;y++;}
+  }
+  return slots;
+}
+function slotPoints(s){ const r=S.rules; let p=s.type==='A'?r.wA:r.wB; if(s.holiday)p*=r.wHoliday; else if(s.weekend)p*=r.wWeekend; return p; }
+function unavailableOn(id,d){ return S.unavailability.some(u=>u.docId===id&&d>=u.from&&d<=u.to); }
+
+function recomputeCarry(){
+  const gain=(S.correction/100)*MAXGAIN;
+  S.physicians.forEach(p=>{ p.carry=(p.delta||0)*gain; });
+}
+
+/* ============== ENGINE ============== */
+function assignSlots(slots,{keepLocked=false}={}){
+  const docs=activeDocs();
+  if(docs.length===0) return {error:'Add at least one active physician first.'};
+  slots.sort((a,b)=> a.date<b.date?-1 : a.date>b.date?1 : (a.type<b.type?-1:1));
+  const acc={};
+  docs.forEach(p=>{ acc[p.id]={pts:(p.carry||0),A:0,B:0,weekend:0,holiday:0,lastDate:null,datesAssigned:{},aDates:{}}; });
+  const r=S.rules;
+  const slotSet=new Set(slots.map(s=>slotKey(s.date,s.type)));
+
+  const result={};
+  for(const k in S.assignments){ if(!slotSet.has(k)) result[k]=Object.assign({},S.assignments[k]); }
+
+  if(keepLocked){
+    for(const s of slots){
+      const k=slotKey(s.date,s.type); const a=S.assignments[k];
+      if(a&&a.locked){
+        result[k]=Object.assign({},a);
+        const ac=acc[a.docId];
+        if(ac){ ac.pts+=slotPoints(s); ac[s.type]++; if(s.weekend)ac.weekend++; if(s.holiday)ac.holiday++; if(s.type==='A')ac.aDates[s.date]=true; ac.datesAssigned[s.date]=(ac.datesAssigned[s.date]||0)+1; ac.lastDate=s.date; }
+      }
+    }
+  }
+
+  function violatesRest(ac,dateStr){ if(r.restA<=0)return false; for(let i=1;i<=r.restA;i++){ if(ac.aDates[offsetDate(dateStr,-i)]) return true; } return false; }
+  function consecutiveRun(ac,dateStr){ let run=1; for(let i=1;i<=r.maxConsec+1;i++){ if(ac.datesAssigned[offsetDate(dateStr,-i)]) run++; else break; } return run; }
+
+  let unfilled=0;
+  for(const slot of slots){
+    const key=slotKey(slot.date,slot.type);
+    if(result[key]) continue;
+    const pts=slotPoints(slot);
+    let best=null,bestScore=Infinity;
+    for(const p of docs){
+      const ac=acc[p.id];
+      if(unavailableOn(p.id,slot.date)) continue;
+      if(ac.datesAssigned[slot.date]) continue;
+      if(violatesRest(ac,slot.date)) continue;
+      if(consecutiveRun(ac,slot.date)>r.maxConsec) continue;
+      let score=ac.pts+pts;
+      // per-physician A/B balance: discourage adding the type they already have more of
+      if(slot.type==='A') score+=Math.max(0,ac.A-ac.B)*AB_GREEDY;
+      else score+=Math.max(0,ac.B-ac.A)*AB_GREEDY;
+      if(slot.weekend) score+=ac.weekend*0.25;
+      if(slot.holiday) score+=ac.holiday*0.6;
+      if(ac.lastDate){ const gap=(parseYmd(slot.date)-parseYmd(ac.lastDate))/86400000; if(gap<7) score+=(7-gap)*0.12; }
+      if(score<bestScore){ bestScore=score; best=p; }
+    }
+    if(!best){ unfilled++; continue; }
+    result[key]={docId:best.id,locked:false};
+    const ac=acc[best.id];
+    ac.pts+=pts; ac[slot.type]++; if(slot.weekend)ac.weekend++; if(slot.holiday)ac.holiday++;
+    if(slot.type==='A') ac.aDates[slot.date]=true;
+    ac.lastDate=slot.date; ac.datesAssigned[slot.date]=(ac.datesAssigned[slot.date]||0)+1;
+  }
+
+  localSearch(result,slots,docs);
+  S.assignments=result; save();
+  return {unfilled,slotCount:slots.length};
+}
+
+/* Constraint-aware local search.
+   Cost per physician = (load − mean)^2 + AB_LAMBDA*(A − B)^2.
+   Each pass tries to move every unlocked slot to the physician that most
+   reduces total cost, keeping all hard constraints satisfied. */
+function localSearch(result,slots,docs){
+  const slotMap={}; slots.forEach(s=>slotMap[slotKey(s.date,s.type)]=s);
+  const inSet=new Set(Object.keys(slotMap));
+  const r=S.rules;
+  function stats(){
+    const o={}; docs.forEach(p=>o[p.id]={pts:(p.carry||0),A:0,B:0});
+    for(const k in result){ if(!inSet.has(k))continue; const a=result[k]; if(!a)continue; const s=slotMap[k]; o[a.docId].pts+=slotPoints(s); o[a.docId][s.type]++; }
+    return o;
+  }
+  function docDates(id){ const set={}; for(const k in result){ const a=result[k]; if(a&&a.docId===id) set[k.split('|')[0]]=true; } return set; }
+  function docADates(id){ const set={}; for(const k in result){ const a=result[k]; if(a&&a.docId===id&&k.split('|')[1]==='A') set[k.split('|')[0]]=true; } return set; }
+  function feasible(s,dates,aDates){
+    if(dates[s.date]) return false;
+    for(let i=1;i<=r.restA;i++){ if(aDates[offsetDate(s.date,-i)]) return false; }
+    if(s.type==='A') for(let i=1;i<=r.restA;i++){ if(dates[offsetDate(s.date,i)]) return false; }
+    let run=1;
+    for(let i=1;i<=r.maxConsec+1;i++){ if(dates[offsetDate(s.date,-i)]) run++; else break; }
+    for(let i=1;i<=r.maxConsec+1;i++){ if(dates[offsetDate(s.date,i)]) run++; else break; }
+    if(run>r.maxConsec) return false;
+    return true;
+  }
+  const cost=(c,mean)=>(c.pts-mean)**2 + AB_LAMBDA*(c.A-c.B)**2;
+  for(let iter=0;iter<8000;iter++){
+    const o=stats();
+    const vals=docs.map(p=>o[p.id].pts);
+    const mean=vals.reduce((x,y)=>x+y,0)/vals.length;
+    let improved=false;
+    for(const k in result){
+      if(!inSet.has(k)) continue;
+      const a=result[k]; if(!a||a.locked) continue;
+      const s=slotMap[k]; const T=s.type; const pts=slotPoints(s);
+      const hiId=a.docId; const hc=o[hiId];
+      let bestLo=null,bestGain=1e-9;
+      for(const p of docs){
+        if(p.id===hiId) continue;
+        const lc=o[p.id];
+        if(unavailableOn(p.id,s.date)) continue;
+        if(!feasible(s,docDates(p.id),docADates(p.id))) continue;
+        const before=cost(hc,mean)+cost(lc,mean);
+        const hc2={pts:hc.pts-pts,A:hc.A-(T==='A'?1:0),B:hc.B-(T==='B'?1:0)};
+        const lc2={pts:lc.pts+pts,A:lc.A+(T==='A'?1:0),B:lc.B+(T==='B'?1:0)};
+        const after=cost(hc2,mean)+cost(lc2,mean);
+        const gain=before-after;
+        if(gain>bestGain){ bestGain=gain; bestLo=p.id; }
+      }
+      if(bestLo){
+        const lc=o[bestLo];
+        hc.pts-=pts; hc[T]--; lc.pts+=pts; lc[T]++;
+        result[k]={docId:bestLo,locked:false}; improved=true;
+      }
+    }
+    if(!improved) break;
+  }
+}
+
+function generateProjection({keepLocked=false}={}){
+  recomputeCarry();
+  const {fromY,fromM,toY,toM}=S.projection;
+  const slots=buildSlotsRange(fromY,fromM,toY,toM);
+  return assignSlots(slots,{keepLocked});
+}
+function generateMonth({keepLocked=false}={}){
+  recomputeCarry();
+  const slots=buildSlotsMonth(S.nav.year,S.nav.month);
+  return assignSlots(slots,{keepLocked});
+}
+
+/* ============== STATS ============== */
+function computeStats(){
+  const stat={}; S.physicians.forEach(p=>stat[p.id]={A:0,B:0,weekend:0,holiday:0,pts:0});
+  let totalPts=0;
+  for(const k in S.assignments){
+    const a=S.assignments[k]; if(!a)continue;
+    const [date,type]=k.split('|');
+    if(!inProjection(date)) continue;
+    const s=slotProps(date,type);
+    const st=stat[a.docId]; if(!st)continue;
+    const pts=slotPoints(s);
+    st[type]++; st.pts+=pts; if(s.weekend)st.weekend++; if(s.holiday)st.holiday++;
+    totalPts+=pts;
+  }
+  const active=activeDocs();
+  return {stat,totalPts,fairShare:active.length?totalPts/active.length:0};
+}
+
+/* ============== RENDERING ============== */
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function projLabel(){ const p=S.projection; return `${MONABBR[p.fromM]} ${p.fromY} – ${MONABBR[p.toM]} ${p.toY}`; }
+function inProjection(dateStr){ const o=parseYmd(dateStr); const mi=monthIndex(o.getFullYear(),o.getMonth()); const p=S.projection; return mi>=monthIndex(p.fromY,p.fromM)&&mi<=monthIndex(p.toY,p.toM); }
+
+function renderAll(){
+  renderSetup(); renderRoster(); renderUnavail(); renderHolidays();
+  renderRules(); renderAdminCal(); renderPhysician(); renderStats(); renderSummaries(); renderHighlights(); renderPublish();
+}
+function fillMonthSelect(id,val){ document.getElementById(id).innerHTML=MONTHS.map((m,i)=>`<option value="${i}" ${i===val?'selected':''}>${m}</option>`).join(''); }
+function renderSetup(){
+  fillMonthSelect('projFromMonth',S.projection.fromM); fillMonthSelect('projToMonth',S.projection.toM);
+  document.getElementById('projFromYear').value=S.projection.fromY;
+  document.getElementById('projToYear').value=S.projection.toY;
+  document.getElementById('bWeekdaysOnly').checked=S.bWeekdaysOnly;
+  document.getElementById('corrRange').value=S.correction;
+  const lvl = S.correction===0?'ignore history' : S.correction<=35?'light' : S.correction<=65?'gentle nudge' : S.correction<=85?'moderate' : 'strong catch-up';
+  document.getElementById('corrLabel').textContent=`${S.correction}% — ${lvl}`;
+  const hs=document.getElementById('histStatus');
+  hs.className = S.historyLabel ? 'notice ok' : 'notice info';
+  hs.style.marginTop='0';
+  hs.textContent = S.historyLabel
+    ? `History loaded: ${S.historyLabel} (${S.historyMonths} months). ${S.physicians.length} physicians on roster.`
+    : 'No history loaded yet. Use “Load report data” on the Data tab.';
+}
+function renderRoster(){
+  const tb=document.getElementById('rosterBody');
+  if(S.physicians.length===0){ tb.innerHTML=`<tr><td colspan="6" class="muted">No physicians yet. Load the report on the Data tab, or add manually.</td></tr>`; }
+  else tb.innerHTML=S.physicians.map(p=>{
+    const rate=p.hist&&p.hist.months?((p.hist.A+p.hist.B)/p.hist.months):null;
+    const d=p.delta||0;
+    return `<tr>
+      <td><span class="swatch" style="background:${p.color}"></span> ${esc(p.name)}</td>
+      <td>${p.active?'<span class="pill B">Active</span>':'<span class="pill" style="background:#33384a;color:#9aa">Inactive</span>'}</td>
+      <td class="num">${rate!=null?rate.toFixed(2):'—'}</td>
+      <td class="num ${d>0?'pos':d<0?'neg':''}">${p.delta!=null?(d>=0?'+':'')+d.toFixed(2):'—'}</td>
+      <td class="num">${(p.carry||0).toFixed(2)}</td>
+      <td>
+        <button class="secondary sm" data-toggle="${p.id}">${p.active?'Deactivate':'Activate'}</button>
+        <button class="danger" data-del="${p.id}">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{const p=docById(b.dataset.toggle);p.active=!p.active;save();renderAll();});
+  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(confirm('Delete this physician?')){ S.physicians=S.physicians.filter(p=>p.id!==b.dataset.del); save(); renderAll(); }});
+  const opts=`<option value="">— select —</option>`+activeDocs().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  document.getElementById('unavailDoc').innerHTML=opts;
+}
+function renderUnavail(){
+  const list=document.getElementById('unavailList');
+  if(S.unavailability.length===0){ list.innerHTML='<span class="muted small">No blocks yet.</span>'; return; }
+  list.innerHTML=S.unavailability.slice().sort((a,b)=>a.from<b.from?-1:1).map(u=>{
+    const p=docById(u.docId);
+    return `<div class="chip">${p?esc(p.name):'?'}: ${u.from} &rarr; ${u.to}${u.reason?' ('+esc(u.reason)+')':''}<span class="x" data-unavail="${u.id}">✕</span></div>`;
+  }).join('');
+  list.querySelectorAll('[data-unavail]').forEach(x=>x.onclick=()=>{S.unavailability=S.unavailability.filter(u=>u.id!==x.dataset.unavail);save();renderUnavail();});
+}
+function renderHolidays(){
+  const list=document.getElementById('holList');
+  if(S.holidays.length===0){ list.innerHTML='<span class="muted small">No holidays yet.</span>'; return; }
+  list.innerHTML=S.holidays.slice().sort((a,b)=>a.date<b.date?-1:1).map(h=>
+    `<div class="chip"><span class="swatch" style="background:#6b4e12"></span>${h.date} — ${esc(h.name)}<span class="x" data-hol="${h.date}">✕</span></div>`
+  ).join('');
+  list.querySelectorAll('[data-hol]').forEach(x=>x.onclick=()=>{S.holidays=S.holidays.filter(h=>h.date!==x.dataset.hol);save();renderAll();});
+}
+function renderRules(){ const r=S.rules; ['wA','wB','wWeekend','wHoliday','restA','maxConsec'].forEach(id=>document.getElementById(id).value=r[id]); }
+
+function calGrid(containerId,labelId,y,m,opts={}){
+  document.getElementById(labelId).textContent=`${MONTHS[m]} ${y}`;
+  const dim=daysInMonth(y,m);
+  const first=new Date(y,m,1).getDay();
+  let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++) html+=`<div class="day empty"></div>`;
+  for(let d=1;d<=dim;d++){
+    const dateStr=ymd(y,m,d);
+    const o=parseYmd(dateStr);
+    const we=isWeekend(o), ho=isHoliday(dateStr);
+    html+=`<div class="day${we?' weekend':''}${ho?' holiday':''}"><div class="dnum">${d}</div>`;
+    if(ho) html+=`<div class="holname">${esc(holidayName(dateStr))}</div>`;
+    ['A','B'].forEach(type=>{
+      if(type==='B'&&S.bWeekdaysOnly&&we) return;
+      const a=S.assignments[slotKey(dateStr,type)];
+      const doc=a?docById(a.docId):null;
+      const name=doc?doc.name.replace(/^Dr\.?\s*/,''):'';
+      const hl=opts.highlightDoc&&doc&&doc.id===opts.highlightDoc?'outline:2px solid var(--accent);':'';
+      const locked=a&&a.locked?' locked':'';
+      html+=`<div class="assign${locked}" style="${hl}" ${opts.clickable?`data-slot="${dateStr}|${type}"`:''}>
+        <span class="tag ${type}">${type}</span>
+        <span class="nm" style="color:${doc?doc.color:'var(--muted)'}">${doc?esc(name):'<span class="muted">—</span>'}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  const c=document.getElementById(containerId);
+  c.innerHTML=html;
+  if(opts.clickable) c.querySelectorAll('[data-slot]').forEach(el=>el.onclick=()=>openModal(el.dataset.slot));
+}
+function renderAdminCal(){ calGrid('adminCal','adminCalLabel',S.nav.year,S.nav.month,{clickable:true}); }
+function renderPhysician(){
+  const sel=document.getElementById('physFilter');
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">— everyone —</option>`+S.physicians.map(p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(p.name)}</option>`).join('');
+  const hl=sel.value||null;
+  calGrid('physCal','physCalLabel',S.nav.year,S.nav.month,{highlightDoc:hl});
+  const card=document.getElementById('myCallsCard');
+  if(hl){
+    card.style.display='block';
+    const mine=[];
+    for(const k in S.assignments){ const a=S.assignments[k]; if(a&&a.docId===hl){ const [date,type]=k.split('|'); mine.push({date,type}); } }
+    mine.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.type<b.type?-1:1));
+    document.getElementById('myCallsList').innerHTML=mine.length
+      ? mine.map(m=>`<div class="chip"><span class="pill ${m.type}">${m.type}</span> ${parseYmd(m.date).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}${isHoliday(m.date)?' 🎉':''}</div>`).join('')
+      : '<span class="muted small">No calls assigned in the loaded schedule.</span>';
+  } else card.style.display='none';
+}
+let charts={};
+function renderStats(){
+  const {stat,fairShare}=computeStats();
+  const active=activeDocs();
+  const loads=active.map(p=>stat[p.id].pts);
+  const mean=loads.length?loads.reduce((a,b)=>a+b,0)/loads.length:0;
+  const sd=loads.length?Math.sqrt(loads.reduce((s,v)=>s+(v-mean)**2,0)/loads.length):0;
+  const cv=mean?(sd/mean*100):0;
+  const spread=loads.length?(Math.max(...loads)-Math.min(...loads)):0;
+  const assignedCount=Object.values(S.assignments).filter(a=>a).length;
+  document.getElementById('statsKpis').innerHTML=
+    kpi(active.length,'Active physicians')+
+    kpi(assignedCount,'Calls scheduled')+
+    kpi(cv.toFixed(1)+'%','Load variation (CV)',cv<8?'ok':'high')+
+    kpi(spread.toFixed(1),'Max−min load gap');
+  const tb=document.getElementById('ledgerBody');
+  tb.innerHTML=active.map(p=>{
+    const s=stat[p.id]; const dev=fairShare?((s.pts-fairShare)/fairShare*100):0;
+    const cls=Math.abs(dev)>15?'high':'ok';
+    const rate=p.hist&&p.hist.months?((p.hist.A+p.hist.B)/p.hist.months):null;
+    const d=p.delta||0; const gap=s.A-s.B;
+    return `<tr>
+      <td><span class="swatch" style="background:${p.color}"></span> ${esc(p.name)}</td>
+      <td class="num">${rate!=null?rate.toFixed(2):'—'}</td>
+      <td class="num ${d>0?'pos':d<0?'neg':''}">${p.delta!=null?(d>=0?'+':'')+d.toFixed(2):'—'}</td>
+      <td class="num">${s.A}</td><td class="num">${s.B}</td><td class="num ${gap!==0?'pos':'neg'}">${gap>0?'+':''}${gap}</td><td class="num">${s.weekend}</td><td class="num">${s.holiday}</td>
+      <td class="num">${s.pts.toFixed(1)}</td>
+      <td class="num deviation ${cls}">${dev>=0?'+':''}${dev.toFixed(0)}%</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="10" class="muted">No active physicians.</td></tr>`;
+  drawCharts(active,stat);
+}
+function kpi(v,l,cls){ return `<div class="card"><div class="stat ${cls==='high'?'deviation high':cls==='ok'?'deviation ok':''}">${v}</div><div class="stat-sub">${l}</div></div>`; }
+function drawCharts(active,stat){
+  if(typeof Chart==='undefined') return;
+  const labels=active.map(p=>p.name.replace(/^Dr\.?\s*/,''));
+  const colors=active.map(p=>p.color);
+  mkBar('chartLoad',labels,[{label:'Weighted load',data:active.map(p=>+stat[p.id].pts.toFixed(2)),backgroundColor:colors}]);
+  mkBar('chartAB',labels,[
+    {label:'A (24h)',data:active.map(p=>stat[p.id].A),backgroundColor:'#6366f1'},
+    {label:'B (10h)',data:active.map(p=>stat[p.id].B),backgroundColor:'#10b981'}
+  ],true);
+  mkBar('chartWknd',labels,[
+    {label:'Weekend',data:active.map(p=>stat[p.id].weekend),backgroundColor:'#3b82f6'},
+    {label:'Holiday',data:active.map(p=>stat[p.id].holiday),backgroundColor:'#f59e0b'}
+  ],true);
+  drawCorr(active,stat);
+}
+function drawCorr(active,stat){
+  if(charts['chartCorr']) charts['chartCorr'].destroy();
+  const tc=themeColors();
+  const pts=active.filter(p=>p.delta!=null).map(p=>({x:p.delta,y:stat[p.id].A+stat[p.id].B,n:p.name.replace(/^Dr\.?\s*/,''),c:p.color}));
+  charts['chartCorr']=new Chart(document.getElementById('chartCorr'),{
+    type:'scatter',
+    data:{datasets:[{label:'Physician',data:pts,backgroundColor:pts.map(p=>p.c),pointRadius:6}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.n}: histΔ ${c.raw.x>=0?'+':''}${c.raw.x}, ${c.raw.y} calls`}}},
+      scales:{x:{title:{display:true,text:'Historical Δ vs avg (calls/mo)',color:tc.tick},ticks:{color:tc.tick},grid:{color:tc.grid}},
+              y:{title:{display:true,text:'Projected calls',color:tc.tick},ticks:{color:tc.tick},grid:{color:tc.grid},beginAtZero:false}}}});
+}
+function mkBar(id,labels,datasets,stacked){
+  if(charts[id]) charts[id].destroy();
+  const tc=themeColors();
+  charts[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets},
+    options:{responsive:true,plugins:{legend:{display:datasets.length>1,labels:{color:tc.tick}}},
+      scales:{x:{stacked:!!stacked,ticks:{color:tc.tick,font:{size:9},maxRotation:90,minRotation:45},grid:{color:tc.grid}},
+              y:{stacked:!!stacked,ticks:{color:tc.tick},grid:{color:tc.grid},beginAtZero:true}}}});
+}
+function renderSummaries(){
+  const monthSlots=buildSlotsMonth(S.nav.year,S.nav.month).length;
+  let monthAssigned=0;
+  for(const k in S.assignments){ const o=parseYmd(k.split('|')[0]); if(o.getFullYear()===S.nav.year&&o.getMonth()===S.nav.month) monthAssigned++; }
+  document.getElementById('schedSummary').textContent=`Viewing ${MONTHS[S.nav.month]} ${S.nav.year} · ${monthAssigned}/${monthSlots} slots · projection ${projLabel()}`;
+  document.getElementById('physSummary').textContent=`${MONTHS[S.nav.month]} ${S.nav.year} · projection ${projLabel()}`;
+}
+
+/* ============== MONTH HIGHLIGHTS (auto narrative) ============== */
+function explainShift(p,y,m){
+  const ms=ymd(y,m,1), me=ymd(y,m,daysInMonth(y,m));
+  const vac=S.unavailability.find(u=>u.docId===p.id && !(u.to<ms||u.from>me));
+  const nm=esc(p.name);
+  if(vac) return `${nm} is light in ${MONABBR[m]} — unavailable ${vac.from.slice(5)}→${vac.to.slice(5)}${vac.reason?' ('+esc(vac.reason)+')':''}; their calls shift to other months to keep the quarter even.`;
+  if((p.delta||0)>0.1) return `${nm} is lighter this month by design — among the most-worked over the loaded history (Δ +${p.delta.toFixed(2)}/mo), so the fairness correction eases their quarter load.`;
+  return `${nm} sits below the monthly average here but evens out across the projection window.`;
+}
+function monthHighlights(y,m){
+  const docs=activeDocs();
+  if(docs.length===0) return ['Add physicians and generate a schedule to see highlights.'];
+  const cnt={}; docs.forEach(p=>cnt[p.id]={A:0,B:0,wk:0,ho:0,total:0});
+  for(const k in S.assignments){ const kk=k.split('|'); const o=parseYmd(kk[0]); if(o.getFullYear()!==y||o.getMonth()!==m) continue; const c=cnt[S.assignments[k].docId]; if(!c) continue; const s=slotProps(kk[0],kk[1]); c[kk[1]]++; c.total++; if(s.weekend)c.wk++; if(s.holiday)c.ho++; }
+  const assigned=docs.reduce((s,p)=>s+cnt[p.id].total,0);
+  if(assigned===0) return [`No schedule generated for ${MONTHS[m]} ${y} yet — use “Generate projection”.`];
+  const totals=docs.map(p=>cnt[p.id].total);
+  const maxV=Math.max(...totals), minV=Math.min(...totals);
+  const items=[];
+  items.push(`<strong>${MONTHS[m]} ${y}:</strong> ${assigned} calls across ${docs.length} physicians (avg ${(assigned/docs.length).toFixed(1)} each). Load is balanced across the full ${projLabel()} window, so a single month can run a little high or low for an individual while the quarter stays even.`);
+  S.holidays.filter(h=>{const o=parseYmd(h.date);return o.getFullYear()===y&&o.getMonth()===m;}).forEach(h=>{
+    const aD=docById((S.assignments[slotKey(h.date,'A')]||{}).docId), bD=docById((S.assignments[slotKey(h.date,'B')]||{}).docId);
+    items.push(`<strong>${esc(h.name)}</strong> (${parseYmd(h.date).toLocaleDateString(undefined,{month:'short',day:'numeric'})}): A call ${aD?esc(aD.name):'—'}, B call ${bD?esc(bD.name):'—'}. Holiday calls are tracked and spread so no one repeatedly draws them.`);
+  });
+  const ms=ymd(y,m,1), me=ymd(y,m,daysInMonth(y,m));
+  const vacs=S.unavailability.filter(u=>!(u.to<ms||u.from>me));
+  if(vacs.length) items.push('<strong>Time off this month:</strong> '+vacs.map(u=>{const p=docById(u.docId);return `${p?esc(p.name):'?'} (${u.from.slice(5)}→${u.to.slice(5)}${u.reason?', '+esc(u.reason):''})`;}).join('; ')+'.');
+  if(maxV-minV>=2){
+    const heavy=docs.filter(p=>cnt[p.id].total===maxV).map(p=>esc(p.name));
+    const light=docs.filter(p=>cnt[p.id].total===minV).map(p=>esc(p.name));
+    items.push(`<strong>Range this month:</strong> busiest — ${heavy.join(', ')} (${maxV} calls); lightest — ${light.join(', ')} (${minV} calls).`);
+    docs.filter(p=>cnt[p.id].total===minV).slice(0,3).forEach(p=>items.push('• '+explainShift(p,y,m)));
+  } else {
+    items.push(`<strong>Even month:</strong> every physician has ${minV}–${maxV} calls.`);
+  }
+  const easedOff=docs.filter(p=>(p.delta||0)>=0.15).map(p=>esc(p.name));
+  const pickingUp=docs.filter(p=>(p.delta||0)<=-0.2).map(p=>esc(p.name));
+  if(S.correction>0&&(easedOff.length||pickingUp.length)){
+    const parts=[];
+    if(easedOff.length) parts.push(easedOff.join(', ')+' carried the heaviest load over the loaded history, so they get slightly fewer calls this quarter');
+    if(pickingUp.length) parts.push(pickingUp.join(', ')+' were lightest historically, so they pick up a bit more');
+    items.push(`<strong>History correction (${S.correction}%):</strong> `+parts.join('; ')+'.');
+  }
+  items.push('Every physician receives an equal number of A (24h) and B (10h) calls across the window.');
+  return items;
+}
+function renderHighlights(){
+  const html=monthHighlights(S.nav.year,S.nav.month).map(s=>`<div style="margin:5px 0">${s}</div>`).join('');
+  const lbl=`${MONTHS[S.nav.month]} ${S.nav.year}`;
+  ['highlightsBody','physHighlightsBody'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=html;});
+  ['highlightsMonth','physHighlightsMonth'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=lbl;});
+}
+
+/* ============== THEME (light / dark, default dark) ============== */
+const THEME_KEY='obgyn_theme';
+function currentTheme(){ try{return localStorage.getItem(THEME_KEY)||'dark';}catch(e){return 'dark';} }
+function themeColors(){ const light=document.body.classList.contains('light'); return light?{tick:'#5c6678',grid:'#d9dfea'}:{tick:'#94a3c0',grid:'#2a3550'}; }
+function applyTheme(t){ document.body.classList.toggle('light',t==='light'); const b=document.getElementById('themeToggle'); if(b) b.textContent=(t==='light'?'Dark mode':'Light mode'); }
+function toggleTheme(){ const t=currentTheme()==='light'?'dark':'light'; try{localStorage.setItem(THEME_KEY,t);}catch(e){} applyTheme(t); renderStats(); }
+
+/* ============== PUBLISH / ROLLING 3-MONTH WINDOW ============== */
+function renderPublish(){
+  const ps=document.getElementById('publishStatus');
+  if(ps) ps.textContent=`Published window: ${projLabel()}${S.publishedAt?' · last published '+new Date(S.publishedAt).toLocaleDateString():' · not yet published'}.`;
+  const banner=document.getElementById('publishBanner'); if(!banner) return;
+  const now=new Date(); const cur=monthIndex(now.getFullYear(),now.getMonth());
+  if(S.physicians.length && cur>monthIndex(S.projection.fromY,S.projection.fromM)){
+    banner.innerHTML=`<div class="notice warn">A new month has begun (${MONTHS[now.getMonth()]} ${now.getFullYear()}), but the published window still starts ${MONABBR[S.projection.fromM]} ${S.projection.fromY}. <button class="sm accent" id="publishNowBtn" style="margin-left:8px">Roll forward &amp; publish</button></div>`;
+    const b=document.getElementById('publishNowBtn'); if(b) b.onclick=()=>{ if(confirm('Roll the window forward to the current month? Already-scheduled months are frozen; new months are generated.')) publishToCurrent(); };
+  } else banner.innerHTML='';
+}
+function rollForward(){
+  const cur=buildSlotsRange(S.projection.fromY,S.projection.fromM,S.projection.toY,S.projection.toM);
+  cur.forEach(s=>{ const k=slotKey(s.date,s.type); if(S.assignments[k]) S.assignments[k].locked=true; });
+  const f=monthIndex(S.projection.fromY,S.projection.fromM)+1, t=monthIndex(S.projection.toY,S.projection.toM)+1;
+  S.projection.fromY=Math.floor(f/12); S.projection.fromM=f%12;
+  S.projection.toY=Math.floor(t/12); S.projection.toM=t%12;
+  S.nav={month:S.projection.fromM,year:S.projection.fromY};
+  const res=generateProjection({keepLocked:true});
+  S.publishedAt=Date.now(); save(); return res;
+}
+function publishToCurrent(){
+  const now=new Date(); let guard=0;
+  while(monthIndex(now.getFullYear(),now.getMonth())>monthIndex(S.projection.fromY,S.projection.fromM) && guard++<36) rollForward();
+  renderAll();
+}
+
+/* ============== MODAL ============== */
+let modalSlot=null;
+function openModal(key){
+  modalSlot=key;
+  const [date,type]=key.split('|');
+  const a=S.assignments[key];
+  document.getElementById('modalTitle').textContent=`${type} call — ${parseYmd(date).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}`;
+  document.getElementById('modalSub').textContent=`${type==='A'?'24-hour':'10-hour'} call.${isHoliday(date)?' Holiday.':isWeekend(parseYmd(date))?' Weekend.':''}`;
+  const sel=document.getElementById('modalDoc');
+  sel.innerHTML=activeDocs().map(p=>`<option value="${p.id}" ${a&&a.docId===p.id?'selected':''}>${esc(p.name)}${unavailableOn(p.id,date)?' — UNAVAILABLE':''}</option>`).join('');
+  document.getElementById('modalLock').checked=a?!!a.locked:false;
+  const warn=document.getElementById('modalWarn');
+  sel.onchange=()=>{ warn.innerHTML=unavailableOn(sel.value,date)?'<div class="notice warn">⚠ This physician is marked unavailable on this date.</div>':''; };
+  sel.onchange();
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); modalSlot=null; }
+
+/* ============== EVENTS ============== */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('view-'+t.dataset.view).classList.add('active');
+  if(t.dataset.view==='stats') renderStats();
+  if(t.dataset.view==='physician') renderPhysician();
+});
+document.querySelectorAll('.sub-tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('pane-'+t.dataset.pane).classList.add('active');
+});
+function shiftMonth(delta){
+  let mi=monthIndex(S.nav.year,S.nav.month)+delta;
+  S.nav.year=Math.floor(mi/12); S.nav.month=((mi%12)+12)%12; save(); renderAdminCal(); renderPhysician(); renderSummaries(); renderHighlights();
+}
+document.getElementById('admPrev').onclick=()=>shiftMonth(-1);
+document.getElementById('admNext').onclick=()=>shiftMonth(1);
+document.getElementById('phPrev').onclick=()=>shiftMonth(-1);
+document.getElementById('phNext').onclick=()=>shiftMonth(1);
+
+function readProjFields(){
+  S.projection.fromM=+document.getElementById('projFromMonth').value;
+  S.projection.fromY=+document.getElementById('projFromYear').value;
+  S.projection.toM=+document.getElementById('projToMonth').value;
+  S.projection.toY=+document.getElementById('projToYear').value;
+  S.bWeekdaysOnly=document.getElementById('bWeekdaysOnly').checked;
+}
+['projFromMonth','projFromYear','projToMonth','projToYear'].forEach(id=>document.getElementById(id).onchange=()=>{ readProjFields(); S.nav={month:S.projection.fromM,year:S.projection.fromY}; save(); renderAll(); });
+document.getElementById('bWeekdaysOnly').onchange=()=>{ S.bWeekdaysOnly=document.getElementById('bWeekdaysOnly').checked; save(); renderAll(); };
+document.getElementById('corrRange').oninput=()=>{ S.correction=+document.getElementById('corrRange').value; recomputeCarry(); save(); renderSetup(); renderRoster(); };
+
+function doProjection(keepLocked){ readProjFields(); S.nav={month:S.projection.fromM,year:S.projection.fromY}; const res=generateProjection({keepLocked}); if(!res.error){ S.publishedAt=Date.now(); save(); } showNotice(res,'projNotice'); showNotice(res,'genNotice'); renderAll(); }
+document.getElementById('genProjBtn').onclick=()=>doProjection(false);
+document.getElementById('genProjBtn2').onclick=()=>doProjection(false);
+document.getElementById('themeToggle').onclick=toggleTheme;
+document.getElementById('rollBtn').onclick=()=>{ if(confirm('Freeze the current window and roll forward one month? Already-published months stay locked; the new incoming month is generated and balanced.')){ const res=rollForward(); renderAll(); showNotice(res,'projNotice'); } };
+document.getElementById('genMonthBtn').onclick=()=>{ const res=generateMonth({keepLocked:false}); showNotice(res,'genNotice'); renderAll(); };
+document.getElementById('regenUnlockedBtn').onclick=()=>{ const res=generateMonth({keepLocked:true}); showNotice(res,'genNotice'); renderAll(); };
+document.getElementById('clearMonthBtn').onclick=()=>{
+  if(confirm('Clear assignments for '+MONTHS[S.nav.month]+' '+S.nav.year+'?')){
+    for(const k in S.assignments){ const o=parseYmd(k.split('|')[0]); if(o.getFullYear()===S.nav.year&&o.getMonth()===S.nav.month) delete S.assignments[k]; }
+    save(); renderAll();
+  }
+};
+function showNotice(res,elId){
+  const el=document.getElementById(elId); if(!el)return;
+  if(res.error){ el.innerHTML=`<div class="notice warn">${res.error}</div>`; return; }
+  el.innerHTML = res.unfilled>0
+    ? `<div class="notice warn">Generated, but ${res.unfilled} slot(s) couldn't be filled — too many physicians unavailable or constraints too tight.</div>`
+    : `<div class="notice ok">✓ Generated &amp; balanced across ${activeDocs().length} physicians (${res.slotCount} slots).</div>`;
+  setTimeout(()=>{ el.innerHTML=''; },8000);
+}
+
+document.getElementById('addDocBtn').onclick=()=>{
+  const n=document.getElementById('newDocName').value.trim(); if(!n)return;
+  S.physicians.push({id:uid(),name:n,active:true,color:PALETTE[S.physicians.length%PALETTE.length],carry:0,delta:null,hist:null});
+  document.getElementById('newDocName').value=''; save(); renderAll();
+};
+document.getElementById('newDocName').addEventListener('keydown',e=>{ if(e.key==='Enter')document.getElementById('addDocBtn').click(); });
+document.getElementById('addUnavailBtn').onclick=()=>{
+  const docId=document.getElementById('unavailDoc').value;
+  const from=document.getElementById('unavailFrom').value;
+  const to=document.getElementById('unavailTo').value||from;
+  if(!docId||!from){ alert('Pick a physician and a start date.'); return; }
+  S.unavailability.push({id:uid(),docId,from,to,reason:document.getElementById('unavailReason').value.trim()});
+  document.getElementById('unavailReason').value=''; save(); renderUnavail();
+};
+document.getElementById('addHolBtn').onclick=()=>{
+  const date=document.getElementById('holDate').value; const name=document.getElementById('holName').value.trim()||'Holiday';
+  if(!date)return; if(!S.holidays.some(h=>h.date===date)) S.holidays.push({date,name});
+  document.getElementById('holName').value=''; save(); renderAll();
+};
+document.getElementById('seedHolBtn').onclick=()=>{
+  const p=S.projection;
+  for(let yr=p.fromY;yr<=p.toY;yr++){
+    [[`${yr}-01-01`,"New Year's Day"],[`${yr}-05-25`,'Memorial Day (approx)'],[`${yr}-07-04`,'Independence Day'],[`${yr}-09-07`,'Labor Day (approx)'],[`${yr}-11-11`,'Veterans Day'],[`${yr}-11-26`,'Thanksgiving (approx)'],[`${yr}-12-25`,'Christmas Day']]
+      .forEach(([date,name])=>{ if(inProjection(date)&&!S.holidays.some(h=>h.date===date)) S.holidays.push({date,name}); });
+  }
+  save(); renderAll();
+};
+['wA','wB','wWeekend','wHoliday','restA','maxConsec'].forEach(id=>{ document.getElementById(id).onchange=()=>{ S.rules[id]=parseFloat(document.getElementById(id).value)||0; save(); }; });
+
+document.getElementById('modalCancel').onclick=closeModal;
+document.getElementById('modalSave').onclick=()=>{ if(!modalSlot)return; S.assignments[modalSlot]={docId:document.getElementById('modalDoc').value,locked:document.getElementById('modalLock').checked}; save(); closeModal(); renderAll(); };
+document.getElementById('modalClear').onclick=()=>{ if(modalSlot){ delete S.assignments[modalSlot]; save(); closeModal(); renderAll(); }};
+document.getElementById('modal').onclick=e=>{ if(e.target.id==='modal') closeModal(); };
+document.getElementById('physFilter').onchange=renderPhysician;
+
+document.getElementById('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`obgyn-schedule-${S.projection.fromY}-${pad(S.projection.fromM+1)}.json`; a.click();
+};
+document.getElementById('importFile').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ S=Object.assign(defaultState(),JSON.parse(rd.result)); save(); renderAll(); alert('Imported.'); }catch(err){ alert('Invalid file.'); } };
+  rd.readAsText(f);
+};
+document.getElementById('resetBtn').onclick=()=>{ if(confirm('Erase ALL data and start fresh?')){ S=defaultState(); save(); renderAll(); }};
+document.getElementById('printBtn').onclick=()=>window.print();
+document.getElementById('loadReportBtn').onclick=()=>{ if(confirm('Load report history + 20-physician roster? This replaces current data.')){ loadReport(); renderAll(); alert('Report loaded. Projection window set to Jun–Aug 2026.'); }};
+document.getElementById('loadProjectBtn').onclick=()=>{ if(confirm('Load report and generate the Jun–Aug projection?')){ loadReport(); const res=generateProjection({keepLocked:false}); S.publishedAt=Date.now(); save(); renderAll(); showNotice(res,'genNotice'); }};
+
+/* ============== REPORT DATA (Sep 2025 – May 2026) ============== */
+function loadReport(){
+  S=defaultState();
+  S.historyLabel="Sep 2025 – May 2026"; S.historyMonths=9;
+  S.correction=50;
+  S.projection={fromM:5,fromY:2026,toM:7,toY:2026};   // Jun–Aug 2026
+  S.nav={month:5,year:2026};
+  S.holidays=[{date:'2026-07-04',name:'Independence Day'}];
+  // [name, A, B, Wknd, monthsActive, deltaPerMo].  Thompson is a single physician
+  // (report's consolidated Jan–May record). 20 physicians total.
+  const roster=[
+    ['Arya',13,14,10,9,-0.10],['Barnard',14,14,8,9,0.01],['Carroll',15,12,6,9,-0.10],
+    ['Chavarria',14,8,9,7,0.04],['Do',12,16,8,9,0.01],['Dutta',15,15,9,9,0.23],
+    ['Galindo',8,14,8,8,-0.35],['Garza',14,15,8,9,0.12],['Holloway',12,13,7,9,-0.33],
+    ['Landez',18,12,9,9,0.23],['Ramos-Gonzalez',13,14,7,9,-0.10],['Schaefer',13,13,7,9,-0.21],
+    ['Senguttuvan',8,9,5,5,0.30],['Shields',13,15,8,9,0.01],['Simpson',14,14,8,9,0.01],
+    ['Thompson',8,8,3,5,0.10],['Troy',14,15,6,9,0.12],['Truong',13,15,9,9,0.01],
+    ['Yaghi',17,13,8,9,0.23],['Zamora',12,13,7,8,0.02]
+  ];
+  S.physicians=roster.map((r,i)=>({
+    id:uid(),name:'Dr. '+r[0],active:true,color:PALETTE[i%PALETTE.length],
+    delta:r[5], hist:{A:r[1],B:r[2],wknd:r[3],months:r[4]}, carry:0
+  }));
+  recomputeCarry();
+  save();
+}
+
+applyTheme(currentTheme());
+renderAll();
+</script>
+</body>
+</html>
