@@ -420,6 +420,29 @@
       <h2>My calls in the projection window</h2>
       <div id="myCallsList"></div>
     </div>
+    <details class="card guide" style="margin-top:16px">
+      <summary style="cursor:pointer;font-weight:700;font-size:14px">How to read this schedule</summary>
+      <div style="margin-top:12px">
+        <h3>What you're looking at</h3>
+        <ul>
+          <li>Each day has two on-call assignments: <span class="pill A">A</span> = the <strong>24-hour</strong> call (7:00 AM to 7:00 AM the next day), and <span class="pill B">B</span> = the <strong>10-hour</strong> call (7:00 AM to 5:00 PM).</li>
+          <li>Shaded days are weekends; amber days are holidays (the holiday name appears in the corner).</li>
+          <li>This page is <strong>read-only</strong> — it shows the official published schedule.</li>
+        </ul>
+        <h3>Find your own calls</h3>
+        <ul>
+          <li>Choose your name in <strong>“Highlight my calls”</strong> at the top. Your assignments get outlined on the calendar, and a <strong>“My calls”</strong> list appears with each of your dates.</li>
+        </ul>
+        <h3>Move between months</h3>
+        <ul>
+          <li>Use the <strong>◀ ▶</strong> arrows above the calendar. The page opens to the current month; you can look ahead within the published window or back at earlier months (past months show a summary of who covered).</li>
+        </ul>
+        <h3>Need a change?</h3>
+        <ul>
+          <li>The schedule is managed by the administrator. For time-off requests, swaps, or anything that looks wrong, contact your scheduling admin — changes can't be made from this page.</li>
+        </ul>
+      </div>
+    </details>
   </section>
 
   <!-- ============ STATS ============ -->
@@ -864,8 +887,24 @@ function renderHolidays(){
 }
 function renderRules(){ const r=S.rules; ['wA','wB','wWeekend','wHoliday','restA','maxConsec'].forEach(id=>document.getElementById(id).value=r[id]); }
 
+function historySummaryHTML(y,m,highlightDoc){
+  const rec=S.history[ymKey(y,m)]||{};
+  const rows=[];
+  S.physicians.forEach(p=>{ const r=rec[p.name]; if(r) rows.push({id:p.id,n:p.name,color:p.color,A:r.A||0,B:r.B||0,wk:r.wk||0}); });
+  Object.keys(rec).forEach(nm=>{ if(!rows.some(r=>r.n===nm)){ const r=rec[nm]; rows.push({id:null,n:nm,color:'#7a869c',A:r.A||0,B:r.B||0,wk:r.wk||0}); } });
+  rows.sort((a,b)=>a.n<b.n?-1:1);
+  let h=`<div class="notice info" style="margin:0 0 12px">Historical month — summary from records. Day-by-day detail wasn't captured for months before the app was in use.</div>`;
+  h+=`<table><thead><tr><th>Physician</th><th class="num">A</th><th class="num">B</th><th class="num">Weekend</th><th class="num">Total</th></tr></thead><tbody>`;
+  rows.forEach(r=>{ const hl=highlightDoc&&r.id===highlightDoc?'background:rgba(245,179,1,.15);':''; h+=`<tr style="${hl}"><td><span class="swatch" style="background:${r.color}"></span> ${esc(r.n)}</td><td class="num">${r.A}</td><td class="num">${r.B}</td><td class="num">${r.wk}</td><td class="num">${r.A+r.B}</td></tr>`; });
+  h+=`</tbody></table>`;
+  return h;
+}
 function calGrid(containerId,labelId,y,m,opts={}){
   document.getElementById(labelId).textContent=`${MONTHS[m]} ${y}`;
+  const _cont=document.getElementById(containerId);
+  const _hasAssign=Object.keys(S.assignments).some(k=>{const o=parseYmd(k.split('|')[0]);return o.getFullYear()===y&&o.getMonth()===m;});
+  if(!_hasAssign && S.history && S.history[ymKey(y,m)]){ _cont.style.display='block'; _cont.innerHTML=historySummaryHTML(y,m,opts.highlightDoc); return; }
+  _cont.style.display='';
   const dim=daysInMonth(y,m);
   const first=new Date(y,m,1).getDay();
   let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="dow">${d}</div>`).join('');
@@ -1002,7 +1041,10 @@ function monthHighlights(y,m){
   const cnt={}; docs.forEach(p=>cnt[p.id]={A:0,B:0,wk:0,ho:0,total:0});
   for(const k in S.assignments){ const kk=k.split('|'); const o=parseYmd(kk[0]); if(o.getFullYear()!==y||o.getMonth()!==m) continue; const c=cnt[S.assignments[k].docId]; if(!c) continue; const s=slotProps(kk[0],kk[1]); c[kk[1]]++; c.total++; if(s.weekend)c.wk++; if(s.holiday)c.ho++; }
   const assigned=docs.reduce((s,p)=>s+cnt[p.id].total,0);
-  if(assigned===0) return [`No schedule generated for ${MONTHS[m]} ${y} yet — use “Generate projection”.`];
+  if(assigned===0){
+    if(S.history && S.history[ymKey(y,m)]) return [`<strong>${MONTHS[m]} ${y}</strong> is a historical month — the calendar shows a summary from records. Day-by-day detail wasn't captured for months before the app was in use.`];
+    return [`No schedule generated for ${MONTHS[m]} ${y} yet — use “Generate projection”.`];
+  }
   const totals=docs.map(p=>cnt[p.id].total);
   const maxV=Math.max(...totals), minV=Math.min(...totals);
   const items=[];
@@ -1033,10 +1075,35 @@ function monthHighlights(y,m){
   items.push('Every physician receives an equal number of A (24h) and B (10h) calls across the window.');
   return items;
 }
+/* Coverage / unavailability-conflict check for the viewed month (Admin only).
+   Flags days where available physicians can't (or can barely) cover the call slots. */
+function coverageLines(y,m){
+  const active=activeDocs(); const n=active.length; if(!n) return [];
+  const dim=daysInMonth(y,m); const flags=[];
+  for(let d=1;d<=dim;d++){
+    const ds=ymd(y,m,d); const we=isWeekend(parseYmd(ds));
+    const needed=(S.bWeekdaysOnly&&we)?1:2;
+    const out=active.filter(p=>unavailableOn(p.id,ds));
+    const avail=n-out.length;
+    if(avail<needed) flags.push({d,avail,out,sev:0});
+    else if(avail<=needed+2 || out.length>=Math.ceil(n*0.5)) flags.push({d,avail,out,sev:1});
+    else if(out.length>=Math.ceil(n*0.35)) flags.push({d,avail,out,sev:2});
+  }
+  if(!flags.length) return [];
+  const fmt=f=>`${MONABBR[m]} ${f.d} (${f.avail}/${n} available${f.out.length?'; out: '+f.out.slice(0,6).map(p=>esc(p.name.replace(/^Dr\.?\s*/,''))).join(', ')+(f.out.length>6?'…':''):''})`;
+  const lines=[]; const imp=flags.filter(f=>f.sev===0), tight=flags.filter(f=>f.sev===1), heads=flags.filter(f=>f.sev===2);
+  if(imp.length) lines.push(`<span class="pos">⚠ Coverage cannot be met</span> — fewer available physicians than call slots on: `+imp.map(fmt).join('; ')+`. These days will have unfilled slots until you resolve them.`);
+  if(tight.length) lines.push(`<span class="pos">Coverage is very tight</span> on: `+tight.map(fmt).join('; ')+`. Generation should still work, but there's little slack if anyone else drops out.`);
+  if(heads.length) lines.push(`Heads-up — a large share of the roster is out on: `+heads.map(fmt).join('; ')+`.`);
+  return lines;
+}
 function renderHighlights(){
-  const html=monthHighlights(S.nav.year,S.nav.month).map(s=>`<div style="margin:5px 0">${s}</div>`).join('');
+  const base=monthHighlights(S.nav.year,S.nav.month);
+  const cov=coverageLines(S.nav.year,S.nav.month);
   const lbl=`${MONTHS[S.nav.month]} ${S.nav.year}`;
-  ['highlightsBody','physHighlightsBody'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=html;});
+  const wrap=arr=>arr.map(s=>`<div style="margin:5px 0">${s}</div>`).join('');
+  const adm=document.getElementById('highlightsBody'); if(adm) adm.innerHTML=wrap(cov.concat(base));
+  const phys=document.getElementById('physHighlightsBody'); if(phys) phys.innerHTML=wrap(base);
   ['highlightsMonth','physHighlightsMonth'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=lbl;});
 }
 
@@ -1273,6 +1340,13 @@ function loadReport(){
 if(S.physicians && S.physicians.length && (!S.history || !Object.keys(S.history).length) && typeof REPORT_HISTORY!=='undefined'){
   S.history=JSON.parse(JSON.stringify(REPORT_HISTORY));
 }
+// Open on Physician View (default tab): current month if it has a live schedule,
+// otherwise the first published month of the window.
+(function(){
+  const now=new Date(), cm=now.getMonth(), cy=now.getFullYear();
+  const liveNow=Object.keys(S.assignments).some(k=>{const o=parseYmd(k.split('|')[0]);return o.getFullYear()===cy&&o.getMonth()===cm;});
+  S.nav = liveNow ? {month:cm,year:cy} : {month:S.projection.fromM, year:S.projection.fromY};
+})();
 applyTheme(currentTheme());
 renderAll();
 </script>
